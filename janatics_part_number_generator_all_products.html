@@ -121,7 +121,7 @@
       display: grid;
       grid-template-columns: 1.12fr 0.88fr;
       gap: 18px;
-      align-items: start;
+      align-items: stretch;
     }
 
     @media (max-width: 940px) {
@@ -134,6 +134,16 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow: hidden;
+    }
+
+    .generated-output-card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .generated-output-card .card-body {
+      flex: 1;
     }
 
     .card-header {
@@ -237,6 +247,43 @@
       font-size: 12px;
     }
 
+    .result-box.chemical-highlight {
+      background: linear-gradient(135deg, #eefaf2 0%, #e8f7ff 100%);
+      border: 1px solid #8bd5b6;
+      box-shadow: 0 8px 20px rgba(6, 52, 90, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-box.chemical-highlight::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: linear-gradient(180deg, #00a36c 0%, #0089c9 100%);
+    }
+
+    .result-box.chemical-highlight small {
+      color: #065f46;
+      font-weight: 900;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+
+    .compatability-caution {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid #b7d8c7;
+      color: #1f4d3a;
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
     .part-number {
       color: var(--dark-blue);
       font-weight: 900;
@@ -324,6 +371,49 @@
       min-height: 16px;
     }
 
+
+
+    .compatibility-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .compatibility-title {
+      font-weight: 900;
+      color: var(--dark-blue);
+      margin-bottom: 6px;
+    }
+
+    .rating-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 11px;
+      margin: 2px 3px 2px 0;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .rating-a { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .rating-b { background: #fefce8; color: #a16207; border-color: #fde68a; }
+    .rating-c { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .rating-d { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
+    .compatibility-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 760px) {
+      .compatibility-grid { grid-template-columns: 1fr; }
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -349,6 +439,48 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       margin-top: 8px;
+    }
+
+    .column-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .breakdown-card {
+      margin-top: 0;
+    }
+
+    .breakdown-details {
+      border-top: 1px solid var(--border);
+    }
+
+    .breakdown-summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 18px;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--dark-blue);
+    }
+
+    .breakdown-summary::-webkit-details-marker { display: none; }
+
+    .breakdown-hint {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .breakdown-details[open] .breakdown-hint::before {
+      content: "Hide";
+    }
+
+    .breakdown-details:not([open]) .breakdown-hint::before {
+      content: "Tap to expand";
     }
   </style>
 </head>
@@ -380,49 +512,85 @@
 
   <main class="container">
     <div class="layout">
-      <section class="card">
-        <div class="card-header">
-          <h2>Configuration</h2>
-          <span>Select product options. Part number and description are generated automatically.</span>
-        </div>
+      <div class="column-stack">
+        <section class="card">
+          <div class="card-header">
+            <h2>Configuration</h2>
+            <span>Select product options. Part number and description are generated automatically.</span>
+          </div>
 
-        <div class="card-body">
-          <div class="form-grid">
-            <div>
-              <label for="productType">Product Type</label>
-              <div class="product-type-block">
-                <div class="field-select">
-                  <select id="productType" onchange="renderForm()">
-                    <option value="ball">Ball Valve - FBV</option>
-                    <option value="butterfly">Butterfly Valve - BF</option>
-                    <option value="qta">QTA - Pneumatic Quarter Turn Actuator</option>
-                    <option value="qtaAccessory">QTA Accessories</option>
-                    <option value="pulse">Pulse Valve - PV</option>
-                    <option value="asv">Angle Seat Valve - ASV</option>
-                  </select>
+          <div class="card-body">
+            <div class="form-grid">
+              <div>
+                <label for="productType">Product Type</label>
+                <div class="product-type-block">
+                  <div class="field-select">
+                    <select id="productType" onchange="renderForm()">
+                      <option value="ball">Ball Valve - FBV</option>
+                      <option value="butterfly">Butterfly Valve - BF</option>
+                      <option value="qta">QTA - Pneumatic Quarter Turn Actuator</option>
+                      <option value="qtaAccessory">QTA Accessories</option>
+                      <option value="pulse">Pulse Valve - PV</option>
+                      <option value="asv">Angle Seat Valve - ASV</option>
+                    </select>
+                  </div>
                 </div>
               </div>
+
+              <div>
+                <label for="mediaSelect">Media / Chemical Compatability</label>
+                <select id="mediaSelect" onchange="generatePartNumber()"></select>
+                <div class="helper">Used only for MOC suggestion. It does not change the part number.</div>
+              </div>
+
             </div>
 
+            <div class="section-title">Ordering Code Fields</div>
+            <div class="form-grid" id="fieldHolder"></div>
+
+            <div class="button-row">
+              <button onclick="generatePartNumber()">Generate</button>
+              <button class="secondary" onclick="copyAll()">Copy Part Number + Description</button>
+              <button class="secondary" onclick="downloadResultPdf()">Download Result as PDF</button>
+            </div>
+
+            <div id="copyStatus" class="copy-ok"></div>
+
+            <p class="helper">
+              QTA torque is shown at 4 bar. Ball Valve and Butterfly Valve maximum output torque options are catalogue reference values and are not part of the ordering code.
+            </p>
           </div>
+        </section>
 
-          <div class="section-title">Ordering Code Fields</div>
-          <div class="form-grid" id="fieldHolder"></div>
-
-          <div class="button-row">
-            <button onclick="generatePartNumber()">Generate</button>
-            <button class="secondary" onclick="copyAll()">Copy Part Number + Description</button>
+        <section class="card breakdown-card">
+          <div class="card-header">
+            <h2>Code Breakdown</h2>
+            <span>Shows how the generated part number is built.</span>
           </div>
+          <details class="breakdown-details" open>
+            <summary class="breakdown-summary">
+              <span>Breakdown Table</span>
+              <span class="breakdown-hint" aria-hidden="true"></span>
+            </summary>
+            <div class="card-body" style="padding-top:0;">
+              <div class="table-wrap" style="margin-top:0;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Code</th>
+                      <th>Selected Value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="breakdownRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+        </section>
+      </div>
 
-          <div id="copyStatus" class="copy-ok"></div>
-
-          <p class="helper">
-            QTA torque is shown at 4 bar. Ball Valve and Butterfly Valve maximum output torque options are catalogue reference values and are not part of the ordering code.
-          </p>
-        </div>
-      </section>
-
-      <section class="card">
+      <section class="card generated-output-card">
         <div class="card-header">
           <h2>Generated Output</h2>
           <span>Use this part number and description in enquiry, quotation or ERP master.</span>
@@ -442,13 +610,13 @@
           </div>
 
           <div class="result-box">
-            <small>Brief Description</small>
-            <div id="briefDescription" class="description">-</div>
+            <small>Description</small>
+            <div id="fullDescription" class="description">-</div>
           </div>
 
-          <div class="result-box">
-            <small>Full Description</small>
-            <div id="fullDescription" class="description">-</div>
+          <div class="result-box chemical-highlight">
+            <small>Chemical Compatability Advisor</small>
+            <div id="chemicalSuggestion" class="description">Select media to view suggested body, trim and seat MOC.</div>
           </div>
 
           <div id="qtaDimensionsSection" class="result-box" style="display:none;">
@@ -479,29 +647,60 @@
       </section>
     </div>
 
-    <section class="card" style="margin-top:18px;">
-      <div class="card-header">
-        <h2>Code Breakdown</h2>
-        <span>Shows how the generated part number is built.</span>
-      </div>
-      <div class="card-body">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Field</th>
-                <th>Code</th>
-                <th>Selected Value</th>
-              </tr>
-            </thead>
-            <tbody id="breakdownRows"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
   </main>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
+
+    const RATING_TEXT = {
+      "A": "Good",
+      "B": "Fair",
+      "C": "Questionable",
+      "D": "Poor",
+      "": "Insufficient data"
+    };
+
+    const RATING_SCORE = { "A": 4, "B": 3, "C": 2, "D": 1, "": 0 };
+
+    const MATERIAL_LABELS = {
+      cf8m: "CF8M / SS316 equivalent",
+      cf8: "CF8 / SS304 equivalent",
+      aluminium: "Aluminium",
+      fkm: "FKM / Viton",
+      nbr: "NBR / Buna-N",
+      epdm: "EPDM"
+    };
+
+    const CHEMICAL_COMPATIBILITY = [
+      { key: "air", label: "Air / Compressed Air", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"A" }, notes: "Suitable for pneumatic utility service. Check dryness, oil carryover and ambient environment." },
+      { key: "water_fresh", label: "Water, fresh", ratings: { cf8m:"A", cf8:"A", aluminium:"B", fkm:"A", nbr:"A", epdm:"A" }, notes: "For utility water, CF8/CF8M and EPDM/NBR are normally acceptable. Check chlorine content." },
+      { key: "water_distilled", label: "Water, distilled", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"A" }, notes: "Low-corrosive water service; verify temperature and velocity." },
+      { key: "water_salt", label: "Water, salt / Sea Water", ratings: { cf8m:"A", cf8:"B", aluminium:"C", fkm:"A", nbr:"A", epdm:"A" }, notes: "Prefer CF8M/SS316 equivalent for chloride service; avoid aluminium for long exposure." },
+      { key: "steam_hotwater", label: "Steam / Hot Water", ratings: { cf8m:"A", cf8:"A", aluminium:"C", fkm:"B", nbr:"C", epdm:"A" }, notes: "Prefer stainless body/trim and EPDM/PTFE seat depending on valve type and temperature." },
+      { key: "diesel", label: "Diesel Fuel", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"D" }, notes: "For petroleum oils, FKM or NBR is usually preferred. Avoid EPDM." },
+      { key: "gasoline", label: "Gasoline", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"D" }, notes: "For hydrocarbon fuel service, prefer FKM/NBR. Avoid EPDM." },
+      { key: "kerosene", label: "Kerosene", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"D" }, notes: "For hydrocarbon fuel service, prefer FKM/NBR. Avoid EPDM." },
+      { key: "hydraulic_oil", label: "Hydraulic Oil, petroleum", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"D" }, notes: "For petroleum hydraulic oil, FKM/NBR is preferred; avoid EPDM." },
+      { key: "ethylene_glycol", label: "Ethylene Glycol", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"A" }, notes: "Generally compatible; verify concentration and temperature." },
+      { key: "acetone", label: "Acetone", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"D", nbr:"D", epdm:"A" }, notes: "Acetone attacks FKM and NBR; EPDM/PTFE type seats are preferred." },
+      { key: "acetic_acid", label: "Acetic Acid", ratings: { cf8m:"A", cf8:"C", aluminium:"D", fkm:"B", nbr:"C", epdm:"A" }, notes: "Prefer CF8M/SS316 equivalent. Avoid aluminium; confirm concentration and temperature." },
+      { key: "citric_acid", label: "Citric Acid", ratings: { cf8m:"A", cf8:"B", aluminium:"C", fkm:"A", nbr:"A", epdm:"A" }, notes: "Food/chemical acid service: CF8M preferred; confirm concentration and cleaning cycle." },
+      { key: "hydrochloric_20", label: "Hydrochloric Acid, 20%", ratings: { cf8m:"D", cf8:"D", aluminium:"D", fkm:"C", nbr:"D", epdm:"A" }, notes: "Standard Janatics CF8/CF8M/Aluminium MOC is generally not recommended. Consult factory for special MOC." },
+      { key: "sulfuric_lt10", label: "Sulfuric Acid, <10%", ratings: { cf8m:"B", cf8:"D", aluminium:"C", fkm:"A", nbr:"D", epdm:"B" }, notes: "Acid concentration and temperature are critical. Prefer factory review." },
+      { key: "sulfuric_10_75", label: "Sulfuric Acid, 10-75%", ratings: { cf8m:"D", cf8:"D", aluminium:"D", fkm:"A", nbr:"D", epdm:"C" }, notes: "Standard body MOC may not be suitable. Mandatory engineering review." },
+      { key: "nitric_20", label: "Nitric Acid, 20%", ratings: { cf8m:"A", cf8:"A", aluminium:"B", fkm:"A", nbr:"D", epdm:"D" }, notes: "Oxidizing acid. Prefer stainless body/trim and avoid NBR/EPDM unless verified." },
+      { key: "phosphoric_lt40", label: "Phosphoric Acid, <40%", ratings: { cf8m:"B", cf8:"A", aluminium:"C", fkm:"A", nbr:"D", epdm:"B" }, notes: "Check concentration, impurities and temperature before final selection." },
+      { key: "sodium_hydroxide_20", label: "Sodium Hydroxide, 20%", ratings: { cf8m:"A", cf8:"A", aluminium:"D", fkm:"D", nbr:"B", epdm:"A" }, notes: "Caustic service: avoid aluminium. EPDM/PTFE generally preferred over FKM." },
+      { key: "sodium_hypochlorite_lt20", label: "Sodium Hypochlorite, <20%", ratings: { cf8m:"C", cf8:"D", aluminium:"D", fkm:"D", nbr:"B", epdm:"B" }, notes: "Oxidizing/chlorinated service; standard MOC needs engineering review." },
+      { key: "chlorine_water", label: "Chlorine Water", ratings: { cf8m:"A", cf8:"C", aluminium:"D", fkm:"D", nbr:"D", epdm:"C" }, notes: "Chlorinated service can be severe. Confirm concentration, temperature and wet/dry condition." },
+      { key: "toluene", label: "Toluene", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"D", nbr:"D", epdm:"D" }, notes: "Aromatic hydrocarbon; avoid common elastomers. Prefer PTFE/RPTFE seat where available." },
+      { key: "xylene", label: "Xylene", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"D", nbr:"D", epdm:"D" }, notes: "Aromatic hydrocarbon; avoid common elastomers. Prefer PTFE/RPTFE seat where available." },
+      { key: "milk", label: "Milk / Dairy", ratings: { cf8m:"A", cf8:"A", aluminium:"B", fkm:"A", nbr:"A", epdm:"A" }, notes: "For hygienic service, prefer CF8M/SS316 equivalent and confirm TC-end/gasket requirements." },
+      { key: "beer", label: "Beer / Brewery", ratings: { cf8m:"A", cf8:"A", aluminium:"A", fkm:"A", nbr:"A", epdm:"A" }, notes: "For food/beverage service, prefer CF8M/SS316 equivalent where hygiene is important." },
+      { key: "detergents", label: "Detergents / CIP Cleaning", ratings: { cf8m:"A", cf8:"A", aluminium:"B", fkm:"B", nbr:"A", epdm:"A" }, notes: "Confirm cleaning chemical concentration, pH, temperature and exposure time." },
+      { key: "unknown", label: "Other / Not listed", ratings: { cf8m:"", cf8:"", aluminium:"", fkm:"", nbr:"", epdm:"" }, notes: "Media is not in the starter database. Use the full compatibility chart and confirm with Engineering." }
+    ];
+
     const QTA_DA_TORQUE_4BAR = {
       "032": 6, "040": 10, "052": 16, "063": 29, "075": 40, "083": 63,
       "092": 90, "105": 132, "125": 200, "140": 342, "160": 532,
@@ -791,6 +990,8 @@
     };
 
     let currentGenerated = null;
+    let currentCompatibilityText = "";
+  const COMPATABILITY_CAUTION = "Caution: These recommendations are indicative only and cannot be guaranteed. Final material selection should be validated by engineering for actual media concentration, temperature, pressure and duty conditions.";
 
     function switchProduct(productKey) {
       const productSelect = document.getElementById("productType");
@@ -805,6 +1006,15 @@
       buttons.forEach(button => {
         button.classList.toggle("active", button.dataset.product === productKey);
       });
+    }
+
+    function formatDropdownLabel(productKey, fieldKey, label) {
+      const raw = String(label || "");
+      if (productKey === "pulse" || productKey === "asv") return raw;
+      if (fieldKey === "port" || fieldKey === "size") {
+        return raw.replace(/\bG(?=\d)/g, "");
+      }
+      return raw;
     }
 
     function renderForm() {
@@ -829,10 +1039,11 @@
         getOptionsForField(productKey, field.key).forEach(optionData => {
           const option = document.createElement("option");
           option.value = optionData.code;
+          const displayLabel = formatDropdownLabel(productKey, field.key, optionData.label);
           if (productKey === "qtaAccessory" && field.key === "accessoryType") {
-            option.textContent = optionData.label;
+            option.textContent = displayLabel;
           } else {
-            option.textContent = `${optionData.code} - ${optionData.label}${optionData.dn ? " / " + optionData.dn : ""}`;
+            option.textContent = `${optionData.code} - ${displayLabel}${optionData.dn ? " / " + optionData.dn : ""}`;
           }
           select.appendChild(option);
         });
@@ -1086,7 +1297,6 @@
         compactCode,
         readableCode,
         displayedCode,
-        briefDescription,
         fullDescription,
         values,
         notes: validation.notes,
@@ -1095,10 +1305,10 @@
 
       document.getElementById("partNumber").textContent = displayedCode;
       document.getElementById("compactNumber").textContent = compactCode;
-      document.getElementById("briefDescription").textContent = briefDescription;
       document.getElementById("fullDescription").textContent = fullDescription;
 
       renderQtaDimensions(productKey, values);
+      renderChemicalSuggestion(productKey, values);
 
       const statusBox = document.getElementById("statusBox");
       if (validation.errors.length > 0) {
@@ -1114,6 +1324,180 @@
 
       renderReviewNotes(validation);
       renderBreakdown(productKey, product, values);
+    }
+
+
+
+    function populateMediaOptions() {
+      const mediaSelect = document.getElementById("mediaSelect");
+      if (!mediaSelect) return;
+
+      mediaSelect.innerHTML = "";
+      CHEMICAL_COMPATIBILITY.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.key;
+        option.textContent = item.label;
+        mediaSelect.appendChild(option);
+      });
+    }
+
+    function getSelectedMedia() {
+      const mediaSelect = document.getElementById("mediaSelect");
+      if (!mediaSelect) return CHEMICAL_COMPATIBILITY.find(item => item.key === "unknown");
+      return CHEMICAL_COMPATIBILITY.find(item => item.key === mediaSelect.value) || CHEMICAL_COMPATIBILITY.find(item => item.key === "unknown");
+    }
+
+    function ratingClass(rating) {
+      return "rating-" + String(rating || "").toLowerCase();
+    }
+
+    function ratingBadge(rating) {
+      const safeRating = rating || "";
+      const label = safeRating ? `${safeRating} - ${RATING_TEXT[safeRating] || ""}` : "Insufficient data";
+      return `<span class="rating-pill ${ratingClass(safeRating)}">${escapeHtml(label)}</span>`;
+    }
+
+    function ratedMaterial(media, key, label) {
+      const rating = media.ratings[key] || "";
+      return { key, label, rating, score: RATING_SCORE[rating] || 0 };
+    }
+
+    function filterPreferred(items) {
+      const usable = items.filter(item => item.rating === "A" || item.rating === "B");
+      if (usable.length === 0) return items.sort((a, b) => b.score - a.score).slice(0, 2);
+      return usable.sort((a, b) => b.score - a.score);
+    }
+
+    function materialListHtml(title, items) {
+      if (!items.length) return `<div class="compatibility-card"><div class="compatibility-title">${escapeHtml(title)}</div>No direct recommendation.</div>`;
+      const rows = items.map(item => `<div>${escapeHtml(item.label)} ${ratingBadge(item.rating)}</div>`).join("");
+      return `<div class="compatibility-card"><div class="compatibility-title">${escapeHtml(title)}</div>${rows}</div>`;
+    }
+
+    function buildCompatibilitySuggestion(productKey, media) {
+      if (productKey === "qta" || productKey === "qtaAccessory") {
+        const modelLabel = MASTER[productKey].model.label;
+        currentCompatibilityText = `Media: ${media.label} | Suggested MOC: Not applicable for ${modelLabel} (non-wetted selection).`;
+        return `
+          <div><strong>Media:</strong> ${escapeHtml(media.label)}</div>
+          <div style="margin-top:8px;"><strong>Suggested MOC:</strong></div>
+          <div class="compatibility-grid" style="grid-template-columns: 1fr;">
+            <div class="compatibility-card"><div class="compatibility-title">Suggested MOC</div>Not applicable for ${escapeHtml(modelLabel)} (non-wetted selection).</div>
+          </div>
+        `;
+      }
+
+      let bodyCandidates = [];
+      let trimCandidates = [];
+      let seatCandidates = [];
+
+      if (productKey === "ball") {
+        bodyCandidates = [
+          ratedMaterial(media, "cf8m", "CF8M Body"),
+          ratedMaterial(media, "cf8", "CF8 Body"),
+          { label: "WCB Body", rating: "", score: 0 }
+        ];
+        trimCandidates = [
+          ratedMaterial(media, "cf8m", "CF8M Ball / SS316 Stem preference"),
+          ratedMaterial(media, "cf8", "CF8 Ball / SS304 Stem preference")
+        ];
+        seatCandidates = getSeatCandidates(productKey, media);
+      }
+
+      if (productKey === "butterfly") {
+        bodyCandidates = [
+          ratedMaterial(media, "cf8m", "CF8M Body"),
+          ratedMaterial(media, "cf8", "CF8 Body"),
+          ratedMaterial(media, "aluminium", "Aluminium Body"),
+          { label: "Cast Iron Body", rating: "", score: 0 }
+        ];
+        trimCandidates = [
+          ratedMaterial(media, "cf8m", "CF8M Disc / SS316 Shaft preference"),
+          ratedMaterial(media, "cf8", "CF8 Disc / SS304 Shaft preference")
+        ];
+        seatCandidates = getSeatCandidates(productKey, media);
+      }
+
+      if (productKey === "pulse") {
+        bodyCandidates = [ratedMaterial(media, "aluminium", "Aluminium alloy die-cast housing")];
+        trimCandidates = [{ label: "Internal diaphragm valve components - confirm with Engineering", rating: "", score: 0 }];
+        seatCandidates = getSeatCandidates(productKey, media);
+      }
+
+      if (productKey === "asv") {
+        bodyCandidates = [
+          ratedMaterial(media, "cf8m", "CF8M Body"),
+          ratedMaterial(media, "cf8", "CF8 Body")
+        ];
+        trimCandidates = [
+          ratedMaterial(media, "cf8m", "CF8M wetted parts"),
+          ratedMaterial(media, "cf8", "CF8 wetted parts")
+        ];
+        seatCandidates = getSeatCandidates(productKey, media);
+      }
+
+      const preferredBody = filterPreferred(bodyCandidates);
+      const preferredTrim = filterPreferred(trimCandidates);
+      const preferredSeat = filterPreferred(seatCandidates);
+
+      currentCompatibilityText = [
+        `Media: ${media.label}`,
+        `Suggested Body: ${preferredBody.map(item => `${item.label} (${item.rating || "check"})`).join(", ")}`,
+        `Suggested Trim: ${preferredTrim.map(item => `${item.label} (${item.rating || "check"})`).join(", ")}`,
+        `Suggested Seat/Seal: ${preferredSeat.map(item => `${item.label} (${item.rating || "check"})`).join(", ")}`
+      ].join(" | ");
+
+      return `
+        <div><strong>Media:</strong> ${escapeHtml(media.label)}</div>
+        <div style="margin-top:8px;"><strong>Suggested MOC:</strong></div>
+        <div class="compatibility-grid">
+          ${materialListHtml("Suggested Body MOC", preferredBody)}
+          ${materialListHtml("Suggested Trim MOC", preferredTrim)}
+          ${materialListHtml("Suggested Seat / Seal", preferredSeat)}
+        </div>
+      `;
+    }
+
+    function getSeatCandidates(productKey, media) {
+      if (productKey === "ball") {
+        return [
+          { label: "PTFE Seat", rating: "A", score: 4 },
+          { label: "RPTFE Seat", rating: "A", score: 4 },
+          { label: "PEEK Seat - high temperature / special service", rating: "B", score: 3 }
+        ];
+      }
+
+      if (productKey === "butterfly") {
+        return [
+          { label: "PTFE Seat", rating: "A", score: 4 },
+          ratedMaterial(media, "epdm", "EPDM Seat"),
+          ratedMaterial(media, "nbr", "NBR Seat")
+        ];
+      }
+
+      if (productKey === "pulse") {
+        return [
+          ratedMaterial(media, "nbr", "NBR Diaphragm / Seal"),
+          ratedMaterial(media, "epdm", "EPDM Diaphragm / Seal"),
+          ratedMaterial(media, "fkm", "FKM / Viton Diaphragm / Seal")
+        ];
+      }
+
+      if (productKey === "asv") {
+        return [
+          { label: "PTFE + NBR", rating: media.ratings.nbr || "", score: RATING_SCORE[media.ratings.nbr] || 0 },
+          { label: "PTFE + FKM", rating: media.ratings.fkm || "", score: RATING_SCORE[media.ratings.fkm] || 0 }
+        ];
+      }
+
+      return [];
+    }
+
+    function renderChemicalSuggestion(productKey, values) {
+      const target = document.getElementById("chemicalSuggestion");
+      if (!target) return;
+      const media = getSelectedMedia();
+      target.innerHTML = buildCompatibilitySuggestion(productKey, media);
     }
 
     function getQtaTorqueText(values) {
@@ -1231,6 +1615,8 @@
         "Part Number: " + currentGenerated.displayedCode,
         "Compact / Catalogue Code: " + currentGenerated.compactCode,
         "Description: " + currentGenerated.fullDescription,
+        "Chemical Compatability: " + (currentCompatibilityText || "Not checked."),
+        "Chemical Compatability Caution: " + COMPATABILITY_CAUTION,
         "Review Notes: " + (currentGenerated.notes.length ? currentGenerated.notes.join(" | ") : "No special review note.")
       ].join("\n");
 
@@ -1239,6 +1625,142 @@
         status.textContent = "Copied.";
         setTimeout(() => status.textContent = "", 1600);
       });
+    }
+
+    function downloadResultPdf() {
+      if (!currentGenerated) generatePartNumber();
+
+      const jsPdfCtor = window.jspdf && window.jspdf.jsPDF;
+      const status = document.getElementById("copyStatus");
+
+      if (!jsPdfCtor) {
+        const fallbackText = [
+          "Janatics Product Part Number Result",
+          "",
+          "Part Number: " + currentGenerated.displayedCode,
+          "Compact / Catalogue Code: " + currentGenerated.compactCode,
+          "Description: " + currentGenerated.fullDescription,
+          "Chemical Compatability: " + (currentCompatibilityText || "Not checked."),
+          "Chemical Compatability Caution: " + COMPATABILITY_CAUTION,
+          "Review Notes: " + (currentGenerated.notes.length ? currentGenerated.notes.join(" | ") : "No special review note.")
+        ].join("\n");
+
+        const printWindow = window.open("", "_blank", "noopener,noreferrer,width=900,height=700");
+        if (printWindow) {
+          printWindow.document.write(`<html><head><title>Janatics Result</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:24px;line-height:1.5;white-space:pre-wrap;}</style></head><body>${escapeHtml(fallbackText)}</body></html>`);
+          printWindow.document.close();
+          printWindow.focus();
+          printWindow.print();
+        }
+        status.textContent = "PDF library unavailable. Print dialog opened to Save as PDF.";
+        setTimeout(() => status.textContent = "", 2200);
+        return;
+      }
+
+      const doc = new jsPdfCtor({ unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 36;
+      const contentWidth = pageWidth - margin * 2;
+      const gap = 10;
+      const palette = {
+        navy: [6, 52, 90],
+        sky: [0, 137, 201],
+        cardBg: [247, 251, 255],
+        cardBorder: [209, 225, 238],
+        cautionBg: [255, 248, 234],
+        cautionBorder: [251, 191, 36],
+        body: [31, 41, 55],
+        muted: [107, 114, 128]
+      };
+      let y = margin;
+
+      function newPage() {
+        doc.addPage();
+        y = margin;
+      }
+
+      function ensureSpace(required) {
+        if (y + required <= pageHeight - margin) return;
+        newPage();
+      }
+
+      function drawHeader() {
+        const headerHeight = 92;
+        ensureSpace(headerHeight + gap);
+        doc.setFillColor(...palette.navy);
+        doc.rect(margin, y, contentWidth, headerHeight, "F");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(255, 255, 255);
+        doc.text("JANATICS PROCESS AUTOMATION", margin + 16, y + 30);
+
+        doc.setFontSize(13);
+        doc.text("Product Part Number Result", margin + 16, y + 52);
+
+        const productName = MASTER[currentGenerated.productKey] ? MASTER[currentGenerated.productKey].model.label : "Selected Product";
+        const generatedOn = new Date().toLocaleString();
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Product: ${productName}`, margin + 16, y + 72);
+        doc.text(`Generated: ${generatedOn}`, margin + contentWidth - 180, y + 72);
+
+        y += headerHeight + gap;
+      }
+
+      function drawSection(title, value, isCaution) {
+        const safeValue = String(value || "-");
+        const lines = doc.splitTextToSize(safeValue, contentWidth - 24);
+        const lineHeight = 14;
+        const sectionHeight = 34 + lines.length * lineHeight + 12;
+        ensureSpace(sectionHeight + gap);
+
+        if (isCaution) {
+          doc.setFillColor(...palette.cautionBg);
+          doc.setDrawColor(...palette.cautionBorder);
+        } else {
+          doc.setFillColor(...palette.cardBg);
+          doc.setDrawColor(...palette.cardBorder);
+        }
+        doc.setLineWidth(1);
+        doc.rect(margin, y, contentWidth, sectionHeight, "FD");
+
+        doc.setTextColor(...palette.sky);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(title, margin + 12, y + 20);
+
+        doc.setTextColor(...palette.body);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10.5);
+        doc.text(lines, margin + 12, y + 38);
+
+        y += sectionHeight + gap;
+      }
+
+      drawHeader();
+      const compatibilityPdfText = String(currentCompatibilityText || "Not checked.").replaceAll(" | ", "\n");
+      drawSection("Part Number", currentGenerated.displayedCode, false);
+      drawSection("Compact / Catalogue Code", currentGenerated.compactCode, false);
+      drawSection("Description", currentGenerated.fullDescription, false);
+      drawSection("Chemical Compatability", compatibilityPdfText, false);
+      drawSection("Chemical Compatability Caution", COMPATABILITY_CAUTION, true);
+      drawSection("Review Notes", currentGenerated.notes.length ? currentGenerated.notes.join(" | ") : "No special review note.", false);
+
+      ensureSpace(24);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...palette.muted);
+      doc.text("This document is generated for reference and pre-selection use.", margin, pageHeight - margin + 2);
+
+      const safeCode = String(currentGenerated.compactCode || "result")
+        .replaceAll(/[^a-zA-Z0-9_-]+/g, "_")
+        .replaceAll(/^_+|_+$/g, "");
+      doc.save(`janatics_${safeCode || "result"}.pdf`);
+
+      status.textContent = "PDF downloaded.";
+      setTimeout(() => status.textContent = "", 1600);
     }
 
     function allCombinations(productKey) {
@@ -1404,7 +1926,10 @@
         .replaceAll("'", "&#039;");
     }
 
-    document.addEventListener("DOMContentLoaded", renderForm);
+    document.addEventListener("DOMContentLoaded", () => {
+      populateMediaOptions();
+      renderForm();
+    });
   </script>
 </body>
 </html>
