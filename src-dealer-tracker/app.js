@@ -361,7 +361,11 @@ function addDealer() {
   if (!requireUnlock()) return;
   const name = q("dealerName").value.trim();
   const city = q("dealerCity").value.trim();
-  const regionId = (q("dealerRegion") && q("dealerRegion").value) || q("entryRegion").value || (state.regions[0] && state.regions[0].id);
+  const dealerRegionEl = q("dealerRegion");
+  if (dealerRegionEl && !dealerRegionEl.value && dealerRegionEl.options.length) {
+    dealerRegionEl.value = dealerRegionEl.options[0].value;
+  }
+  const regionId = (dealerRegionEl && dealerRegionEl.value) || q("entryRegion").value || (state.regions[0] && state.regions[0].id);
   if (!name || !regionId) return;
 
   state.dealers.push({ id: crypto.randomUUID(), regionId, name, city, person: "", mobile: "", email: "", affinity: "Medium" });
@@ -576,13 +580,27 @@ function fillRegionDealerSelects() {
 
   regionSelectIds.forEach(id => {
     const sel = q(id);
+    if (!sel) return;
     const prev = sel.value;
     sel.innerHTML = "";
     if (id === "filterRegion") {
       sel.appendChild(opt("ALL", "All Regions"));
     }
     state.regions.forEach(r => sel.appendChild(opt(r.id, r.name)));
-    if (Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
+    if (Array.from(sel.options).some(o => o.value === prev)) {
+      sel.value = prev;
+    }
+
+    if (id === "dealerRegion") {
+      const filterRegionId = q("filterRegion") && q("filterRegion").value !== "ALL" ? q("filterRegion").value : "";
+      if (filterRegionId && Array.from(sel.options).some(o => o.value === filterRegionId)) {
+        sel.value = filterRegionId;
+      }
+    }
+
+    if (id !== "filterRegion" && !sel.value && sel.options.length) {
+      sel.value = sel.options[0].value;
+    }
   });
 
   const map = [
