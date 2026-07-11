@@ -9,9 +9,10 @@
 <body>
   <header class="topbar">
     <h1>Dealer-wise Business Manager</h1>
-    <p>Manage product-wise potential, forecast, actuals, and mapped key accounts for Process Automation.</p>
+    <p>Manage product-wise potential, forecast, actuals, and mapped key accounts for Butterfly Valve business.</p>
     <div class="row" style="margin-top:10px;">
       <a class="btn ghost" href="index.html">Back to Tracker Home</a>
+      <a class="btn secondary" href="../janatics_part_number_generator_all_products.html">Open Janatics Product Code Generator</a>
     </div>
   </header>
 
@@ -49,6 +50,17 @@
     </section>
 
     <section class="card">
+      <h2>Dealer Data Import</h2>
+      <p class="muted">Template columns: Month, Product, Key Account, Potential, Forecast, Affinity, and Affinity Explanation. Fill in Excel, save as CSV, and upload.</p>
+      <div class="row">
+        <button id="btnDwDownloadTemplate" class="btn">Download Dealer Template</button>
+        <button id="btnDwImportData" class="btn secondary">Upload Filled CSV</button>
+        <input id="dwImportFileInput" type="file" accept=".csv,text/csv" style="display:none;" />
+      </div>
+      <p id="dwImportStatus" class="status">No import activity yet.</p>
+    </section>
+
+    <section class="card">
       <h2>Product-wise Business (Dealer)</h2>
       <div class="table-wrap">
         <table>
@@ -70,8 +82,8 @@
     </section>
 
     <section class="card">
-      <h2>Key Accounts Mapping (Process Automation)</h2>
-      <p class="muted">Accounts added here are tagged to product PA.</p>
+      <h2>Key Accounts Mapping (Butterfly Valve)</h2>
+      <p class="muted">Accounts added here are tagged to product BFV.</p>
       <div class="grid four">
         <label>
           Account Name
@@ -97,7 +109,7 @@
         </label>
       </div>
       <div class="row">
-        <button id="btnDwAddAccount" class="btn secondary">Add PA Key Account</button>
+        <button id="btnDwAddAccount" class="btn secondary">Add BFV Key Account</button>
       </div>
       <div class="table-wrap" style="margin-top:10px;">
         <table>

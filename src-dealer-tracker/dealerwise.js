@@ -1,5 +1,12 @@
 const STORAGE_KEY = "dealer-growth-tracker-v1";
 const PRODUCTS = ["PA", "BV", "QTA", "PV", "ASV"];
+const PRODUCT_LABELS = {
+  PA: "BFV - Butterfly Valve",
+  BV: "BV - Ball Valve",
+  QTA: "QTA - Quarter Turn Actuator",
+  PV: "PV - Pulse Valve",
+  ASV: "ASV - Angle Seat Valve"
+};
 
 const state = {
   regions: [],
@@ -64,6 +71,12 @@ function bindEvents() {
   q("btnDwSaveProducts").addEventListener("click", saveProductRows);
   q("btnDwAddAccount").addEventListener("click", addPaAccount);
   q("btnDwSaveEngineer").addEventListener("click", saveSalesEngineerMapping);
+
+  const importBtn = q("btnDwImportData");
+  const importInput = q("dwImportFileInput");
+  q("btnDwDownloadTemplate").addEventListener("click", downloadDealerTemplate);
+  importBtn.addEventListener("click", () => importInput.click());
+  importInput.addEventListener("change", importDealerCsv);
 }
 
 function initDefaults() {
@@ -155,7 +168,7 @@ function renderProductRows() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${esc(product)}</td>
+      <td>${esc(productLabel(product))}</td>
       <td><input type="number" min="0" step="0.01" data-product="${esc(product)}" data-field="potential" value="${num(rec && rec.potential)}" /></td>
       <td><input type="number" min="0" step="0.01" data-product="${esc(product)}" data-field="forecast" value="${num(rec && rec.forecast)}" /></td>
       <td><input type="number" min="0" step="0.01" data-product="${esc(product)}" data-field="actual" value="${num(rec && rec.actual)}" /></td>
@@ -249,7 +262,7 @@ function renderPaAccounts() {
       <td>${esc(dealer.name)}</td>
       <td>${esc(dealer.salesEngineer || "-")}</td>
       <td>${esc(a.account)}</td>
-      <td>${esc(a.product)}</td>
+      <td>${esc(productLabel(a.product))}</td>
       <td>${esc(lakh(a.potential))}</td>
       <td>${esc(lakh(a.forecast))}</td>
       <td>${esc(a.stage)}</td>
@@ -285,7 +298,7 @@ function renderQuarterSummary() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${esc(quarter)}</td>
-      <td>${esc(g.product)}</td>
+      <td>${esc(productLabel(g.product))}</td>
       <td>${esc(lakh(g.potential))}</td>
       <td>${esc(lakh(g.forecast))}</td>
       <td>${esc(lakh(g.actual))}</td>
@@ -302,6 +315,257 @@ function quarterFromMonth(monthValue) {
   if (m >= 7 && m <= 9) return "Q2";
   if (m >= 10 && m <= 12) return "Q3";
   return "Q4";
+}
+
+function productLabel(code) {
+  return PRODUCT_LABELS[code] || code;
+}
+
+function normalizeProduct(value) {
+  const text = String(value || "").trim().toUpperCase();
+  if (!text) return "PA";
+  if (text.startsWith("PA") || text.startsWith("BFV") || text.includes("PROCESS") || text.includes("BUTTERFLY")) return "PA";
+  if (text.startsWith("BV") || text.includes("BALL")) return "BV";
+  if (text.startsWith("QTA") || text.includes("QUARTER")) return "QTA";
+  if (text.startsWith("PV") || text.includes("PULSE")) return "PV";
+  if (text.startsWith("ASV") || text.includes("ANGLE")) return "ASV";
+  return PRODUCTS.includes(text) ? text : "PA";
+}
+
+function normalizeMonth(value) {
+  const text = String(value || "").trim();
+  if (/^\d{4}-\d{2}$/.test(text)) return text;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text.slice(0, 7);
+  return "";
+}
+
+function csvEscape(value) {
+  const text = String(value == null ? "" : value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === "," && !inQuotes) {
+      out.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+
+  out.push(current);
+  return out;
+}
+
+function setImportStatus(message, ok) {
+  const el = q("dwImportStatus");
+  if (!el) return;
+  el.textContent = message;
+  el.className = ok ? "status ok" : "status";
+}
+
+function downloadDealerTemplate() {
+  const month = q("dwMonth").value || new Date().toISOString().slice(0, 7);
+  const region = selectedRegion();
+  const dealer = selectedDealer();
+
+  const header = [
+    "month",
+    "region",
+    "dealer",
+    "salesEngineer",
+    "product",
+    "keyAccount",
+    "potentialL",
+    "forecastL",
+    "affinity",
+    "affinityExplanation",
+    "stage"
+  ];
+
+  const sample = [
+    month,
+    region ? region.name : "",
+    dealer ? dealer.name : "",
+    dealer && dealer.salesEngineer ? dealer.salesEngineer : "",
+    "BFV - Butterfly Valve",
+    "",
+    "0",
+    "0",
+    dealer && dealer.affinity ? dealer.affinity : "Medium",
+    dealer && dealer.affinityReason ? dealer.affinityReason : "Strong fit for local process-valve demand",
+    "Prospect"
+  ];
+
+  const csv = [header, sample].map(row => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dealer_data_template_${month}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  setImportStatus("Template downloaded. Fill in Excel and upload CSV.", true);
+}
+
+function ensureRegion(regionName) {
+  const name = String(regionName || "").trim();
+  if (!name) return null;
+  const found = state.regions.find(r => r.name.toUpperCase() === name.toUpperCase());
+  if (found) return found;
+  const rec = { id: crypto.randomUUID(), name };
+  state.regions.push(rec);
+  return rec;
+}
+
+function ensureDealer(regionId, dealerName) {
+  const name = String(dealerName || "").trim();
+  if (!regionId || !name) return null;
+  const found = state.dealers.find(d => d.regionId === regionId && d.name.toUpperCase() === name.toUpperCase());
+  if (found) return found;
+  const rec = {
+    id: crypto.randomUUID(),
+    regionId,
+    name,
+    city: "",
+    person: "",
+    mobile: "",
+    email: "",
+    affinity: "Medium"
+  };
+  state.dealers.push(rec);
+  return rec;
+}
+
+function importDealerCsv(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = String(reader.result || "");
+      const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+      if (lines.length < 2) throw new Error("CSV has no data rows");
+
+      const header = parseCsvLine(lines[0]).map(h => String(h || "").trim());
+      const idx = key => header.indexOf(key);
+      const req = ["month", "region", "dealer"];
+      if (req.some(k => idx(k) < 0)) throw new Error("Missing required columns: month, region, dealer");
+
+      let monthlyCount = 0;
+      let accountCount = 0;
+      let dealerCount = 0;
+
+      for (let i = 1; i < lines.length; i += 1) {
+        const row = parseCsvLine(lines[i]);
+        const get = key => {
+          const j = idx(key);
+          return j >= 0 ? String(row[j] || "").trim() : "";
+        };
+
+        const month = normalizeMonth(get("month"));
+        const regionName = get("region");
+        const dealerName = get("dealer");
+        if (!month || !regionName || !dealerName) continue;
+
+        const region = ensureRegion(regionName);
+        const dealer = ensureDealer(region.id, dealerName);
+        if (!dealer) continue;
+        dealerCount += 1;
+
+        const salesEngineer = get("salesEngineer");
+        if (salesEngineer) dealer.salesEngineer = salesEngineer;
+
+        const affinity = get("affinity");
+        if (affinity) dealer.affinity = affinity;
+        const affinityExplanation = get("affinityExplanation");
+        if (affinityExplanation) dealer.affinityReason = affinityExplanation;
+
+        const product = normalizeProduct(get("product"));
+        const potential = num(get("potentialL"));
+        const forecast = num(get("forecastL"));
+        const actual = num(get("actualL"));
+        const oppCount = intNum(get("oppCount"));
+        const hasMonthly = ["potentialL", "forecastL", "actualL", "oppCount"].some(key => get(key) !== "");
+
+        if (hasMonthly) {
+          state.monthly = state.monthly.filter(r => !(
+            r.month === month &&
+            r.regionId === region.id &&
+            r.dealerId === dealer.id &&
+            r.product === product
+          ));
+
+          state.monthly.push({
+            id: crypto.randomUUID(),
+            month,
+            regionId: region.id,
+            dealerId: dealer.id,
+            product,
+            potential,
+            forecast,
+            actual,
+            oppCount
+          });
+          monthlyCount += 1;
+        }
+
+        const accountName = get("keyAccount") || get("accountName");
+        if (accountName) {
+          const accountPotential = get("accountPotentialL") !== "" ? num(get("accountPotentialL")) : potential;
+          const accountForecast = get("accountForecastL") !== "" ? num(get("accountForecastL")) : forecast;
+          const accountStage = get("stage") || get("accountStage") || "Prospect";
+
+          state.accounts = state.accounts.filter(a => !(
+            a.month === month &&
+            a.regionId === region.id &&
+            a.dealerId === dealer.id &&
+            a.account.toUpperCase() === accountName.toUpperCase() &&
+            a.product === "PA"
+          ));
+
+          state.accounts.push({
+            id: crypto.randomUUID(),
+            month,
+            regionId: region.id,
+            dealerId: dealer.id,
+            account: accountName,
+            product: "PA",
+            potential: accountPotential,
+            forecast: accountForecast,
+            stage: accountStage
+          });
+          accountCount += 1;
+        }
+      }
+
+      persist();
+      renderSelectors();
+      renderAll();
+      setImportStatus(`Import successful: ${dealerCount} dealer rows, ${monthlyCount} monthly records, ${accountCount} BFV key accounts.`, true);
+    } catch (err) {
+      console.error(err);
+      setImportStatus("Import failed. Please use the downloaded template and upload CSV format.", false);
+    }
+
+    event.target.value = "";
+  };
+
+  reader.readAsText(file);
 }
 
 function lakh(v) {
