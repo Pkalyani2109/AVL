@@ -126,6 +126,15 @@ function bindEvents() {
     q(id).addEventListener("change", renderAll);
   });
 
+  const exportBtn = q("btnExportCsvDb");
+  const importBtn = q("btnImportCsvDb");
+  const importInput = q("csvDbFileInput");
+  if (exportBtn) exportBtn.addEventListener("click", exportLocalDbCsv);
+  if (importBtn && importInput) {
+    importBtn.addEventListener("click", () => importInput.click());
+    importInput.addEventListener("change", importLocalDbCsv);
+  }
+
   q("btnAddRegion").addEventListener("click", addRegion);
   q("btnAddDealer").addEventListener("click", addDealer);
   q("btnSaveForecast").addEventListener("click", saveForecast);
@@ -490,9 +499,9 @@ function renderKpis() {
   const visitDone = sum(activity.map(a => a.visitDone));
 
   const cards = [
-    ["Potential", money(totalPotential)],
-    ["Forecast", money(totalForecast)],
-    ["Actual", money(totalActual)],
+    ["Potential (L)", money(totalPotential)],
+    ["Forecast (L)", money(totalForecast)],
+    ["Actual (L)", money(totalActual)],
     ["Forecast Hit %", `${hitRate.toFixed(1)}%`],
     ["Open Opp (count)", String(totalOpp)],
     ["Support Open", String(currentSupports.length)],
@@ -645,7 +654,144 @@ function sum(arr) {
 }
 
 function money(v) {
-  return Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  return `${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} L`;
+}
+
+function setCsvStatus(message, ok) {
+  const el = q("csvDbStatus");
+  if (!el) return;
+  el.textContent = message;
+  el.className = ok ? "status ok" : "status";
+}
+
+function csvEscape(value) {
+  const text = String(value == null ? "" : value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function exportLocalDbCsv() {
+  const rows = [];
+
+  state.regions.forEach(r => {
+    rows.push(["region", r.id, r.name, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
+  });
+
+  state.dealers.forEach(d => {
+    rows.push([
+      "dealer", d.id, d.regionId, d.name, d.city || "", d.person || "", d.mobile || "", d.email || "", d.salesEngineer || "",
+      "", "", "", "", "", "", "", "", "", "", ""
+    ]);
+  });
+
+  state.monthly.forEach(m => {
+    rows.push([
+      "monthly", m.id, m.month, m.regionId, m.dealerId, m.product, m.potential, m.forecast, m.actual, m.oppCount,
+      "", "", "", "", "", "", "", "", "", ""
+    ]);
+  });
+
+  state.supports.forEach(s => {
+    rows.push(["support", s.id, s.month, s.regionId, s.dealerId, "", "", "", "", "", s.text || "", "", "", "", "", "", "", "", "", ""]);
+  });
+
+  state.accounts.forEach(a => {
+    rows.push([
+      "account", a.id, a.month, a.regionId, a.dealerId, a.product, a.potential, a.forecast, "", "",
+      "", a.account || "", a.stage || "", "", "", "", "", "", "", ""
+    ]);
+  });
+
+  state.activities.forEach(a => {
+    rows.push([
+      "activity", a.id, a.month, a.regionId, a.dealerId, "", "", "", "", "",
+      "", "", "", a.visitPlan, a.visitDone, a.expoAttended, a.expoHosted, "", "", ""
+    ]);
+  });
+
+  const header = [
+    "entity", "id", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8",
+    "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18"
+  ];
+
+  const lines = [header, ...rows].map(cols => cols.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([lines], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dealer_tracker_localdb_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  setCsvStatus("CSV exported successfully.", true);
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === "," && !inQuotes) {
+      out.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  out.push(current);
+  return out;
+}
+
+function importLocalDbCsv(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = String(reader.result || "");
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      if (lines.length < 2) throw new Error("Empty CSV");
+
+      const imported = { regions: [], dealers: [], monthly: [], supports: [], accounts: [], activities: [] };
+      lines.slice(1).forEach(line => {
+        const c = parseCsvLine(line);
+        const e = c[0];
+        if (e === "region") imported.regions.push({ id: c[1], name: c[2] });
+        if (e === "dealer") imported.dealers.push({ id: c[1], regionId: c[2], name: c[3], city: c[4], person: c[5], mobile: c[6], email: c[7], salesEngineer: c[8] });
+        if (e === "monthly") imported.monthly.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], product: c[5], potential: num(c[6]), forecast: num(c[7]), actual: num(c[8]), oppCount: intNum(c[9]) });
+        if (e === "support") imported.supports.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], text: c[10] });
+        if (e === "account") imported.accounts.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], product: c[5], potential: num(c[6]), forecast: num(c[7]), account: c[11], stage: c[12] });
+        if (e === "activity") imported.activities.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], visitPlan: intNum(c[13]), visitDone: intNum(c[14]), expoAttended: intNum(c[15]), expoHosted: intNum(c[16]) });
+      });
+
+      state.regions = imported.regions;
+      state.dealers = imported.dealers;
+      state.monthly = imported.monthly;
+      state.supports = imported.supports;
+      state.accounts = imported.accounts;
+      state.activities = imported.activities;
+
+      persist();
+      ensureDefaults();
+      renderAll();
+      setCsvStatus("CSV imported successfully.", true);
+    } catch (err) {
+      console.error(err);
+      setCsvStatus("CSV import failed. Please use LocalDB export format.", false);
+    }
+
+    event.target.value = "";
+  };
+
+  reader.readAsText(file);
 }
 
 function esc(str) {

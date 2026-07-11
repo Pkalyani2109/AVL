@@ -10,6 +10,9 @@
   <header class="topbar">
     <h1>Dealer Growth Tracker</h1>
     <p>Region to dealer to key account to opportunities. Monthly review control tower.</p>
+    <div class="row" style="margin-top:10px;">
+      <a class="btn secondary" href="dealerwise.html">Open Dealer-wise Page</a>
+    </div>
   </header>
 
   <main class="shell">
@@ -40,6 +43,17 @@
           <li>If backend is not configured, use Demo Unlock for UI evaluation.</li>
         </ul>
       </details>
+    </section>
+
+    <section class="card">
+      <h2>Local Database (CSV)</h2>
+      <p class="muted">Export your complete tracker data to CSV and import it back for persistence and backup.</p>
+      <div class="row">
+        <button id="btnExportCsvDb" class="btn">Export LocalDB CSV</button>
+        <button id="btnImportCsvDb" class="btn secondary">Import LocalDB CSV</button>
+        <input id="csvDbFileInput" type="file" accept=".csv,text/csv" style="display:none;" />
+      </div>
+      <p id="csvDbStatus" class="status">No CSV import/export action yet.</p>
     </section>
 
     <section class="card kpi-card">
@@ -138,15 +152,15 @@
             <input id="entryMonth" type="month" />
           </label>
           <label>
-            Dealer Potential
+            Dealer Potential (Lakhs)
             <input id="entryPotential" type="number" min="0" step="0.01" placeholder="0" />
           </label>
           <label>
-            Forecast
+            Forecast (Lakhs)
             <input id="entryForecast" type="number" min="0" step="0.01" placeholder="0" />
           </label>
           <label>
-            Actual
+            Actual (Lakhs)
             <input id="entryActual" type="number" min="0" step="0.01" placeholder="0" />
           </label>
           <label>
@@ -204,11 +218,11 @@
             </select>
           </label>
           <label>
-            Potential
+            Potential (Lakhs)
             <input id="accountPotential" type="number" min="0" step="0.01" />
           </label>
           <label>
-            Forecast
+            Forecast (Lakhs)
             <input id="accountForecast" type="number" min="0" step="0.01" />
           </label>
           <label>
@@ -274,10 +288,10 @@
               <th>Region</th>
               <th>Dealer</th>
               <th>Product</th>
-              <th>Potential</th>
-              <th>Forecast</th>
-              <th>Actual</th>
-              <th>Gap</th>
+              <th>Potential (L)</th>
+              <th>Forecast (L)</th>
+              <th>Actual (L)</th>
+              <th>Gap (L)</th>
               <th>Opp</th>
               <th>Support</th>
             </tr>
@@ -298,8 +312,8 @@
               <th>Dealer</th>
               <th>Account</th>
               <th>Product</th>
-              <th>Potential</th>
-              <th>Forecast</th>
+              <th>Potential (L)</th>
+              <th>Forecast (L)</th>
               <th>Stage</th>
             </tr>
           </thead>

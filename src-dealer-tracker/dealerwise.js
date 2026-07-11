@@ -244,11 +244,15 @@ function renderPaAccounts() {
       <td>${esc(dealer.salesEngineer || "-")}</td>
       <td>${esc(a.account)}</td>
       <td>${esc(a.product)}</td>
-      <td>${esc(num(a.potential).toLocaleString("en-IN"))}</td>
-      <td>${esc(num(a.forecast).toLocaleString("en-IN"))}</td>
+      <td>${esc(lakh(a.potential))}</td>
+      <td>${esc(lakh(a.forecast))}</td>
       <td>${esc(a.stage)}</td>
     </tr>
   `).join("");
+}
+
+function lakh(v) {
+  return `${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} L`;
 }
 
 function selectedRegion() {
