@@ -1,17 +1,32 @@
 const STORAGE_KEY = "dealer-growth-tracker-v1";
 
+const MASTER_DEALERS = [
+  { region: "BANGALORE", person: "MR. NAGESH NAYAK", dealer: "PROCESS VALVES & FITTINGS", mobile: "9980008605", email: "nageshnaikpvtf@gmail.com" },
+  { region: "BANGALORE", person: "MR. HARI", dealer: "LEO PNEUMATIC & FASTENERS", mobile: "9035697187", email: "info@leopneumatics.in" },
+  { region: "BANGALORE", person: "MR. BHASKAR MURTHY", dealer: "B M TOOLS & TRADERS", mobile: "9845002427", email: "bmtmys@yahoo.com" },
+  { region: "BANGALORE", person: "MR. OM", dealer: "EVERGREEN HARDWARE STORES", mobile: "9916289190", email: "evergreenhosur@gmail.com" },
+  { region: "CBE 2", person: "MR. MUSTANSIR", dealer: "NOBLE HARDWARE & MACHINERY MART", mobile: "9894711031", email: "noble.nhmrm@gmail.com" },
+  { region: "CBE 2", person: "MR. PARAMESWARA MOORTHY", dealer: "VELUSRI ELECTRICAL & ELECTRONICS", mobile: "9865422222", email: "velusrielectricals@yahoo.com" },
+  { region: "CBE 2", person: "MR. MURUGAIYAN", dealer: "GEMINI ENGINEERING CO.", mobile: "9842589444", email: "murugaiyan.gemini@gmail.com" },
+  { region: "CBE 2", person: "MR. CHELLAPANDI", dealer: "SKY PNEUMATICS", mobile: "9442246170", email: "skypneumatic@gmail.com" },
+  { region: "CHENNAI 1", person: "MR. DHANDAPANI", dealer: "HORIZON ENTERPRISES", mobile: "9840087543", email: "horizon.chennai@yahoo.in" },
+  { region: "DELHI 1", person: "MR. RAKESH YADAV", dealer: "ANUBHAV ENTERPRISES", mobile: "9810256630", email: "anubhav_enterprises@yahoo.co.in" },
+  { region: "GUJARAT", person: "MR. MANISH SHAH", dealer: "ENVISAFE ENGINEERS", mobile: "9825009879", email: "envisafe2000@gmail.com" },
+  { region: "HYDERABAD", person: "MR. BALAJI KRISHNA RAO", dealer: "HYDROMECH ENGINEERS", mobile: "9848185824", email: "hydromechvsp@gmail.com" },
+  { region: "INDORE", person: "MR. MANISH JOSHI", dealer: "UMANG ENGINEERING PRIVATE LIMITED", mobile: "9993058587", email: "manish.umangengg@gmail.com" },
+  { region: "KOLKATA", person: "MR. TRIDEEP SINGH DHANJAL", dealer: "APPLIED SOLUTIONS", mobile: "9835114924", email: "appliedsolutions.jsr@gmail.com" },
+  { region: "MUMBAI", person: "MR. HIMANSHU NARESH", dealer: "YOGEETA ENTERPRISES", mobile: "9323258434", email: "yogeetaenterprises@gmail.com" },
+  { region: "MUMBAI-2", person: "MR. BHAVESH SHAH", dealer: "MULTILINKS", mobile: "9820142230", email: "multilinks2008@gmail.com" },
+  { region: "PUNE", person: "MR. SHANKAR PATLOE", dealer: "TRADELINKS MARKETING SERVICES", mobile: "9922923304", email: "shankar@tradelinksmarketing.com" },
+  { region: "TEXTILE", person: "MR. VENKAT KRISHNA", dealer: "BALAJI ELECTRICALS", mobile: "9944941598", email: "bbalajielectricals@gmail.com" }
+];
+
 const state = {
   unlocked: false,
   session: null,
   cognito: null,
-  regions: [
-    { id: crypto.randomUUID(), name: "South" },
-    { id: crypto.randomUUID(), name: "West" }
-  ],
-  dealers: [
-    { id: crypto.randomUUID(), regionId: null, name: "ABC Pneumatics", city: "Chennai" },
-    { id: crypto.randomUUID(), regionId: null, name: "Flow Control Hub", city: "Pune" }
-  ],
+  regions: [],
+  dealers: [],
   monthly: [],
   supports: [],
   accounts: [],
@@ -20,6 +35,7 @@ const state = {
 
 (function init() {
   hydrate();
+  seedMasterData();
   normalizeSeedDealers();
   bindEvents();
   ensureDefaults();
@@ -50,6 +66,40 @@ function normalizeSeedDealers() {
     const region = state.regions[idx % state.regions.length];
     return { ...d, regionId: region.id || first };
   });
+}
+
+function seedMasterData() {
+  const regionByName = new Map(state.regions.map(r => [r.name, r]));
+
+  MASTER_DEALERS.forEach(item => {
+    if (!regionByName.has(item.region)) {
+      const rec = { id: crypto.randomUUID(), name: item.region };
+      state.regions.push(rec);
+      regionByName.set(item.region, rec);
+    }
+  });
+
+  const dealerKey = d => `${regionName(d.regionId)}::${d.name}`.toUpperCase();
+  const existing = new Set(state.dealers.map(dealerKey));
+
+  MASTER_DEALERS.forEach(item => {
+    const region = regionByName.get(item.region);
+    const key = `${item.region}::${item.dealer}`.toUpperCase();
+    if (existing.has(key)) return;
+
+    state.dealers.push({
+      id: crypto.randomUUID(),
+      regionId: region.id,
+      name: item.dealer,
+      city: "",
+      person: item.person,
+      mobile: item.mobile,
+      email: item.email
+    });
+  });
+
+  state.regions.sort((a, b) => a.name.localeCompare(b.name));
+  persist();
 }
 
 function ensureDefaults() {
@@ -226,7 +276,7 @@ function addDealer() {
   const regionId = q("entryRegion").value || (state.regions[0] && state.regions[0].id);
   if (!name || !regionId) return;
 
-  state.dealers.push({ id: crypto.randomUUID(), regionId, name, city });
+  state.dealers.push({ id: crypto.randomUUID(), regionId, name, city, person: "", mobile: "", email: "" });
   q("dealerName").value = "";
   q("dealerCity").value = "";
   persist();
@@ -329,9 +379,57 @@ function activateTab(name) {
 
 function renderAll() {
   fillRegionDealerSelects();
+  renderRegionTabs();
   renderKpis();
   renderMonthlyTable();
   renderAccountsTable();
+  renderDealerDirectory();
+}
+
+function renderRegionTabs() {
+  const wrap = q("regionTabs");
+  if (!wrap) return;
+
+  const active = q("filterRegion").value || "ALL";
+  const items = [{ value: "ALL", label: "All" }].concat(
+    state.regions.map(r => ({ value: r.id, label: r.name }))
+  );
+
+  wrap.innerHTML = items.map(item => (
+    `<button class="region-tab ${item.value === active ? "active" : ""}" data-region-id="${esc(item.value)}">${esc(item.label)}</button>`
+  )).join("");
+
+  wrap.querySelectorAll(".region-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      q("filterRegion").value = btn.dataset.regionId;
+      syncDealerByRegion("filterRegion", "filterDealer", true);
+      renderAll();
+    });
+  });
+}
+
+function renderDealerDirectory() {
+  const tbody = q("dealerDirectoryRows");
+  if (!tbody) return;
+
+  const region = q("filterRegion").value;
+  const dealer = q("filterDealer").value;
+
+  const rows = state.dealers.filter(d => {
+    if (region && region !== "ALL" && d.regionId !== region) return false;
+    if (dealer && dealer !== "ALL" && d.id !== dealer) return false;
+    return true;
+  });
+
+  tbody.innerHTML = rows.map(d => `
+    <tr>
+      <td>${esc(regionName(d.regionId))}</td>
+      <td>${esc(d.name)}</td>
+      <td>${esc(d.person || "-")}</td>
+      <td>${esc(d.mobile || "-")}</td>
+      <td>${esc(d.email || "-")}</td>
+    </tr>
+  `).join("");
 }
 
 function fillRegionDealerSelects() {

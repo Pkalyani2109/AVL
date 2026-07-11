@@ -8,6 +8,8 @@
   --line: #d7e1ea;
   --warning: #b45309;
   --ok: #166534;
+  --uswds-blue: #005ea2;
+  --uswds-navy: #162e51;
 }
 
 * {
@@ -55,7 +57,7 @@ body {
 
 .card h2 {
   margin: 0 0 10px;
-  color: #0a3a66;
+  color: var(--uswds-navy);
 }
 
 .muted {
@@ -210,6 +212,28 @@ textarea:focus {
 .tab.active {
   background: #d7f0e8;
   border-color: #9ccfc0;
+}
+
+.region-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.region-tab {
+  border: 1px solid #8eb1d1;
+  border-radius: 999px;
+  background: #f8fbff;
+  color: var(--uswds-navy);
+  font-weight: 800;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.region-tab.active {
+  background: var(--uswds-blue);
+  border-color: var(--uswds-blue);
+  color: #fff;
 }
 
 .tab-panel {
