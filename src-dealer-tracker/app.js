@@ -1,6 +1,6 @@
 const STORAGE_KEY = "dealer-growth-tracker-v1";
 const PRODUCT_LABELS = {
-  PA: "PA - Process Automation",
+  PA: "BFV - Butterfly Valve",
   BV: "BV - Ball Valve",
   QTA: "QTA - Quarter Turn Actuator",
   PV: "PV - Pulse Valve",
@@ -529,10 +529,10 @@ function renderDealerDirectory() {
       <td>${esc(d.mobile || "-")}</td>
       <td>${esc(d.email || "-")}</td>
       <td>
-        <select class="dealer-affinity-select" data-dealer-id="${esc(d.id)}">
-          <option value="High" ${d.affinity === "High" ? "selected" : ""}>High</option>
-          <option value="Medium" ${d.affinity === "Medium" || !d.affinity ? "selected" : ""}>Medium</option>
-          <option value="Low" ${d.affinity === "Low" ? "selected" : ""}>Low</option>
+        <select class="dealer-affinity-select ${affinityClass(d.affinity)}" data-dealer-id="${esc(d.id)}">
+          <option value="High" ${normalizeAffinity(d.affinity) === "High" ? "selected" : ""}>High</option>
+          <option value="Medium" ${normalizeAffinity(d.affinity) === "Medium" ? "selected" : ""}>Medium</option>
+          <option value="Low" ${normalizeAffinity(d.affinity) === "Low" ? "selected" : ""}>Low</option>
         </select>
       </td>
     </tr>
@@ -544,19 +544,27 @@ function renderDealerDirectory() {
 }
 
 function setDealerAffinity(dealerId, affinity, selectEl) {
-  const rec = state.dealers.find(d => d.id === dealerId);
-  const previous = rec && rec.affinity ? rec.affinity : "Medium";
-
-  if (!requireUnlock()) {
-    if (selectEl) selectEl.value = previous;
-    return;
-  }
+  const normalized = normalizeAffinity(affinity);
 
   state.dealers = state.dealers.map(d => {
     if (d.id !== dealerId) return d;
-    return { ...d, affinity };
+    return { ...d, affinity: normalized };
   });
+  if (selectEl) {
+    selectEl.value = normalized;
+    selectEl.className = `dealer-affinity-select ${affinityClass(normalized)}`;
+  }
   persist();
+}
+
+function normalizeAffinity(value) {
+  if (value === "High" || value === "Low") return value;
+  return "Medium";
+}
+
+function affinityClass(value) {
+  const affinity = normalizeAffinity(value).toLowerCase();
+  return `affinity-${affinity}`;
 }
 
 function fillRegionDealerSelects() {

@@ -37,41 +37,6 @@
       padding: 28px 34px;
     }
 
-    .header-top {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .header-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .header-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 40px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.36);
-      background: rgba(255, 255, 255, 0.14);
-      color: #ffffff;
-      font-size: 13px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: transform 0.18s ease, background 0.18s ease;
-    }
-
-    .header-link:hover {
-      background: rgba(255, 255, 255, 0.22);
-      transform: translateY(-1px);
-    }
-
     header h1 {
       margin: 0 0 8px;
       font-size: 30px;
@@ -594,17 +559,10 @@
   <header>
     <h1>Janatics Product Part Number Generator</h1>
     <p>Ball Valve, Butterfly Valve, QTA, QTA Accessories, Pulse Valve and Angle Seat Valve.</p>
-  <header>
-    <div class="header-top">
-      <div>
-        <h1>Janatics Product Part Number Generator</h1>
-        <p>Generate configurable Janatics product part numbers with live compatibility guidance.</p>
-      </div>
-      <div class="header-actions">
-        <a id="trackerHomeLink" class="header-link" href="https://pkalyani2109.github.io/AVL/src-dealer-tracker/">Open Tracker Home</a>
-      </div>
-    </div>
   </header>
+
+  <section class="product-banner" aria-label="Product quick switcher">
+    <div class="product-banner-inner">
       <div class="product-banner-top">
         <div>
           <h2 class="product-banner-title">Quick Product Switcher</h2>
@@ -1185,7 +1143,6 @@
       }
     };
 
-    const TRACKER_HOME_FALLBACK = "https://pkalyani2109.github.io/AVL/src-dealer-tracker/";
     let currentGenerated = null;
     let currentCompatibilityText = "";
   const COMPATABILITY_CAUTION = "Caution: These recommendations are indicative only and cannot be guaranteed. Final material selection should be validated by engineering for actual media concentration, temperature, pressure and duty conditions.";
@@ -1210,22 +1167,6 @@
       if (productKey === "pulse" || productKey === "asv") return raw;
       if (fieldKey === "port" || fieldKey === "size") {
         return raw.replace(/\bG(?=\d)/g, "");
-      }
-
-      function getTrackerHomeUrl() {
-        const { protocol, hostname } = window.location;
-        if (protocol === "file:") return TRACKER_HOME_FALLBACK;
-        if (hostname === "127.0.0.1" || hostname === "localhost") {
-          return "http://127.0.0.1:8001/src-dealer-tracker/index.html";
-        }
-        const base = window.location.pathname.replace(/\/[^/]*$/, "/");
-        return `${window.location.origin}${base}src-dealer-tracker/index.html`;
-      }
-
-      function wireTrackerHomeLink() {
-        const link = document.getElementById("trackerHomeLink");
-        if (!link) return;
-        link.href = getTrackerHomeUrl();
       }
       return raw;
     }
@@ -2488,7 +2429,6 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       populateMediaOptions();
-      wireTrackerHomeLink();
       renderForm();
     });
   </script>
