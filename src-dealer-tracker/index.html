@@ -12,6 +12,7 @@
     <p>Region to dealer to key account to opportunities. Monthly review control tower.</p>
     <div class="row" style="margin-top:10px;">
       <a class="btn secondary" href="dealerwise.html">Open Dealer-wise Page</a>
+      <a class="btn ghost" href="../janatics_part_number_generator_all_products.html">Open Janatics Product Code Generator</a>
     </div>
   </header>
 
@@ -90,11 +91,11 @@
           Product
           <select id="filterProduct">
             <option value="ALL">All Products</option>
-            <option value="PA">PA</option>
-            <option value="BV">BV</option>
-            <option value="QTA">QTA</option>
-            <option value="PV">PV</option>
-            <option value="ASV">ASV</option>
+            <option value="PA">PA - Process Automation</option>
+            <option value="BV">BV - Ball Valve</option>
+            <option value="QTA">QTA - Quarter Turn Actuator</option>
+            <option value="PV">PV - Pulse Valve</option>
+            <option value="ASV">ASV - Angle Seat Valve</option>
           </select>
         </label>
       </div>
@@ -150,11 +151,11 @@
           <label>
             Product
             <select id="entryProduct">
-              <option value="PA">PA</option>
-              <option value="BV">BV</option>
-              <option value="QTA">QTA</option>
-              <option value="PV">PV</option>
-              <option value="ASV">ASV</option>
+              <option value="PA">PA - Process Automation</option>
+              <option value="BV">BV - Ball Valve</option>
+              <option value="QTA">QTA - Quarter Turn Actuator</option>
+              <option value="PV">PV - Pulse Valve</option>
+              <option value="ASV">ASV - Angle Seat Valve</option>
             </select>
           </label>
           <label>
@@ -228,11 +229,11 @@
           <label>
             Product
             <select id="accountProduct">
-              <option value="PA">PA</option>
-              <option value="BV">BV</option>
-              <option value="QTA">QTA</option>
-              <option value="PV">PV</option>
-              <option value="ASV">ASV</option>
+              <option value="PA">PA - Process Automation</option>
+              <option value="BV">BV - Ball Valve</option>
+              <option value="QTA">QTA - Quarter Turn Actuator</option>
+              <option value="PV">PV - Pulse Valve</option>
+              <option value="ASV">ASV - Angle Seat Valve</option>
             </select>
           </label>
           <label>
@@ -374,15 +375,23 @@
 
     <section class="card">
       <h2>Dealer Directory</h2>
+      <div class="grid two" style="margin-bottom:10px;">
+        <label>
+          Search Dealer
+          <input id="dealerDirectorySearch" type="text" placeholder="Search by dealer, region, person, mobile or email" />
+        </label>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th>Sr No</th>
               <th>Region</th>
               <th>Dealer</th>
               <th>Contact Person</th>
               <th>Mobile</th>
               <th>Email</th>
+              <th>PA Affinity</th>
             </tr>
           </thead>
           <tbody id="dealerDirectoryRows"></tbody>

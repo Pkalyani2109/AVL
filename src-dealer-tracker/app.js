@@ -1,4 +1,11 @@
 const STORAGE_KEY = "dealer-growth-tracker-v1";
+const PRODUCT_LABELS = {
+  PA: "PA - Process Automation",
+  BV: "BV - Ball Valve",
+  QTA: "QTA - Quarter Turn Actuator",
+  PV: "PV - Pulse Valve",
+  ASV: "ASV - Angle Seat Valve"
+};
 
 const MASTER_DEALERS = [
   { region: "BANGALORE", person: "MR. NAGESH NAYAK", dealer: "PROCESS VALVES & FITTINGS", mobile: "9980008605", email: "nageshnaikpvft@gmail.com" },
@@ -114,9 +121,10 @@ function normalizeSeedDealers() {
   if (!state.regions.length || !state.dealers.length) return;
   const first = state.regions[0].id;
   state.dealers = state.dealers.map((d, idx) => {
-    if (d.regionId) return d;
+    const affinity = d.affinity || "Medium";
+    if (d.regionId) return { ...d, affinity };
     const region = state.regions[idx % state.regions.length];
-    return { ...d, regionId: region.id || first };
+    return { ...d, regionId: region.id || first, affinity };
   });
 }
 
@@ -146,7 +154,8 @@ function seedMasterData() {
       city: "",
       person: item.person,
       mobile: item.mobile,
-      email: item.email
+      email: item.email,
+      affinity: item.affinity || "Medium"
     });
   });
 
@@ -183,6 +192,7 @@ function bindEvents() {
   ["filterMonth", "filterQuarter", "filterRegion", "filterDealer", "filterProduct"].forEach(id => {
     q(id).addEventListener("change", renderAll);
   });
+  q("dealerDirectorySearch").addEventListener("input", renderDealerDirectory);
 
   [
     ["entryMonth", "entryQuarter"],
@@ -352,7 +362,7 @@ function addDealer() {
   const regionId = q("entryRegion").value || (state.regions[0] && state.regions[0].id);
   if (!name || !regionId) return;
 
-  state.dealers.push({ id: crypto.randomUUID(), regionId, name, city, person: "", mobile: "", email: "" });
+  state.dealers.push({ id: crypto.randomUUID(), regionId, name, city, person: "", mobile: "", email: "", affinity: "Medium" });
   q("dealerName").value = "";
   q("dealerCity").value = "";
   persist();
@@ -491,22 +501,62 @@ function renderDealerDirectory() {
 
   const region = q("filterRegion").value;
   const dealer = q("filterDealer").value;
+  const query = q("dealerDirectorySearch").value.trim().toLowerCase();
 
   const rows = state.dealers.filter(d => {
     if (region && region !== "ALL" && d.regionId !== region) return false;
     if (dealer && dealer !== "ALL" && d.id !== dealer) return false;
+    if (query) {
+      const haystack = [
+        regionName(d.regionId),
+        d.name,
+        d.person,
+        d.mobile,
+        d.email,
+        d.affinity
+      ].join(" ").toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
     return true;
   });
 
-  tbody.innerHTML = rows.map(d => `
+  tbody.innerHTML = rows.map((d, idx) => `
     <tr>
+      <td>${idx + 1}</td>
       <td>${esc(regionName(d.regionId))}</td>
       <td>${esc(d.name)}</td>
       <td>${esc(d.person || "-")}</td>
       <td>${esc(d.mobile || "-")}</td>
       <td>${esc(d.email || "-")}</td>
+      <td>
+        <select class="dealer-affinity-select" data-dealer-id="${esc(d.id)}">
+          <option value="High" ${d.affinity === "High" ? "selected" : ""}>High</option>
+          <option value="Medium" ${d.affinity === "Medium" || !d.affinity ? "selected" : ""}>Medium</option>
+          <option value="Low" ${d.affinity === "Low" ? "selected" : ""}>Low</option>
+        </select>
+      </td>
     </tr>
   `).join("");
+
+  tbody.querySelectorAll(".dealer-affinity-select").forEach(sel => {
+    sel.addEventListener("change", () => setDealerAffinity(sel.dataset.dealerId, sel.value, sel));
+  });
+}
+
+function setDealerAffinity(dealerId, affinity, selectEl) {
+  const rec = state.dealers.find(d => d.id === dealerId);
+  const previous = rec && rec.affinity ? rec.affinity : "Medium";
+
+  if (!requireUnlock()) {
+    if (selectEl) selectEl.value = previous;
+    return;
+  }
+
+  state.dealers = state.dealers.map(d => {
+    if (d.id !== dealerId) return d;
+    return { ...d, affinity };
+  });
+  persist();
 }
 
 function fillRegionDealerSelects() {
@@ -592,7 +642,7 @@ function renderMonthlyTable() {
       quarter: quarterFromMonth(r.month),
       region: regionName(r.regionId),
       dealer: dealerName(r.dealerId),
-      product: r.product,
+      product: productLabel(r.product),
       potential: money(r.potential),
       forecast: money(r.forecast),
       actual: money(r.actual),
@@ -632,7 +682,7 @@ function renderQuarterlyTable() {
         quarter,
         region: regionName(r.regionId),
         dealer: dealerName(r.dealerId),
-        product: r.product,
+        product: productLabel(r.product),
         potential: 0,
         forecast: 0,
         actual: 0,
@@ -685,7 +735,7 @@ function renderAccountsTable() {
       <td>${esc(regionName(a.regionId))}</td>
       <td>${esc(dealerName(a.dealerId))}</td>
       <td>${esc(a.account)}</td>
-      <td>${esc(a.product)}</td>
+      <td>${esc(productLabel(a.product))}</td>
       <td>${esc(money(a.potential))}</td>
       <td>${esc(money(a.forecast))}</td>
       <td>${esc(a.stage)}</td>
@@ -795,6 +845,10 @@ function money(v) {
   return `${Number(v || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} L`;
 }
 
+function productLabel(code) {
+  return PRODUCT_LABELS[code] || code;
+}
+
 function setCsvStatus(message, ok) {
   const el = q("csvDbStatus");
   if (!el) return;
@@ -817,7 +871,7 @@ function exportLocalDbCsv() {
   state.dealers.forEach(d => {
     rows.push([
       "dealer", d.id, d.regionId, d.name, d.city || "", d.person || "", d.mobile || "", d.email || "", d.salesEngineer || "",
-      "", "", "", "", "", "", "", "", "", "", ""
+      d.affinity || "Medium", "", "", "", "", "", "", "", "", "", ""
     ]);
   });
 
@@ -903,7 +957,7 @@ function importLocalDbCsv(event) {
         const c = parseCsvLine(line);
         const e = c[0];
         if (e === "region") imported.regions.push({ id: c[1], name: c[2] });
-        if (e === "dealer") imported.dealers.push({ id: c[1], regionId: c[2], name: c[3], city: c[4], person: c[5], mobile: c[6], email: c[7], salesEngineer: c[8] });
+        if (e === "dealer") imported.dealers.push({ id: c[1], regionId: c[2], name: c[3], city: c[4], person: c[5], mobile: c[6], email: c[7], salesEngineer: c[8], affinity: c[9] || "Medium" });
         if (e === "monthly") imported.monthly.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], product: c[5], potential: num(c[6]), forecast: num(c[7]), actual: num(c[8]), oppCount: intNum(c[9]) });
         if (e === "support") imported.supports.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], text: c[10] });
         if (e === "account") imported.accounts.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], product: c[5], potential: num(c[6]), forecast: num(c[7]), account: c[11], stage: c[12] });
