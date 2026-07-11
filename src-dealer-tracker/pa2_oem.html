@@ -39,11 +39,19 @@
     </section>
 
     <section class="card">
+      <h2>Import OEM</h2>
+      <p class="muted">Upload OEM list (Excel/CSV). KEVA targets are auto-created and mapped to region using state/address text.</p>
+      <div class="row" style="margin-top:0; margin-bottom:8px;">
+        <button id="btnPa2ImportKeva" class="btn secondary">Import OEM (KEVA by Address)</button>
+        <input id="pa2ImportKevaFile" type="file" accept=".xlsx,.xls,.csv" style="display:none;" />
+      </div>
+      <p id="pa2ImportStatus" class="status">No import activity yet.</p>
+    </section>
+
+    <section class="card">
       <h2>OEM Plan Entry</h2>
       <div class="row" style="margin-top:0; margin-bottom:8px;">
         <button id="btnPa2NewPlan" class="btn">Add New OEM Plan</button>
-        <button id="btnPa2ImportKeva" class="btn secondary">Import KEVA Targets (Address-based)</button>
-        <input id="pa2ImportKevaFile" type="file" accept=".xlsx,.xls,.csv" style="display:none;" />
       </div>
 
       <div id="pa2EntryFormWrap" style="display:none;">
@@ -212,6 +220,62 @@
 
     <section class="card">
       <h2>OEM Growth Plan Review</h2>
+      <div class="grid four" style="margin-bottom:10px;">
+        <label>
+          Search OEM / Account
+          <input id="pa2ReviewSearch" type="text" placeholder="Type account or OEM name" />
+        </label>
+        <label>
+          Account Type
+          <select id="pa2ReviewTypeFilter">
+            <option value="ALL">All</option>
+            <option value="OEM">OEM</option>
+            <option value="Direct">Direct Account</option>
+          </select>
+        </label>
+        <label>
+          Product
+          <select id="pa2ReviewProductFilter">
+            <option value="ALL">All</option>
+            <option value="Scotch Yoke">Scotch Yoke</option>
+            <option value="KEVA">KEVA</option>
+            <option value="Namur Cylinder">Namur Cylinder</option>
+            <option value="Automation">Automation</option>
+          </select>
+        </label>
+        <label>
+          Onboarding Status
+          <select id="pa2ReviewOnboardFilter">
+            <option value="ALL">All</option>
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid three" style="margin-bottom:10px;">
+        <label>
+          Sort By
+          <select id="pa2ReviewSortBy">
+            <option value="month">Month</option>
+            <option value="oemName">OEM / Account</option>
+            <option value="region">Region</option>
+            <option value="forecast">Forecast</option>
+            <option value="actual">Actual</option>
+            <option value="gap">Gap</option>
+          </select>
+        </label>
+        <label>
+          Sort Order
+          <select id="pa2ReviewSortOrder">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+        </label>
+        <div class="row" style="align-items:end; margin-top:0;">
+          <button id="btnPa2ReviewClear" class="btn secondary">Clear Review Filters</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>

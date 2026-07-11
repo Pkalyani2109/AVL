@@ -104,7 +104,15 @@ const SEEDED_PA2_PLANS = [
 
 const state = {
   regions: [],
-  pa2Plans: []
+  pa2Plans: [],
+  review: {
+    search: "",
+    type: "ALL",
+    product: "ALL",
+    onboarding: "ALL",
+    sortBy: "month",
+    sortOrder: "desc"
+  }
 };
 
 let selectedPlanId = null;
@@ -259,6 +267,69 @@ function bindEvents() {
   q("btnPa2CancelEdit").addEventListener("click", cancelEntry);
   q("btnPa2ClearForm").addEventListener("click", clearForm);
   q("btnPa2RemovePlan").addEventListener("click", removeSelectedPlan);
+
+  bindReviewControl("pa2ReviewSearch", "input", value => {
+    state.review.search = String(value || "").trim();
+    renderPlanTable();
+  });
+  bindReviewControl("pa2ReviewTypeFilter", "change", value => {
+    state.review.type = value || "ALL";
+    renderPlanTable();
+  });
+  bindReviewControl("pa2ReviewProductFilter", "change", value => {
+    state.review.product = value || "ALL";
+    renderPlanTable();
+  });
+  bindReviewControl("pa2ReviewOnboardFilter", "change", value => {
+    state.review.onboarding = value || "ALL";
+    renderPlanTable();
+  });
+  bindReviewControl("pa2ReviewSortBy", "change", value => {
+    state.review.sortBy = value || "month";
+    renderPlanTable();
+  });
+  bindReviewControl("pa2ReviewSortOrder", "change", value => {
+    state.review.sortOrder = value || "desc";
+    renderPlanTable();
+  });
+
+  const clearBtn = q("btnPa2ReviewClear");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      state.review = {
+        search: "",
+        type: "ALL",
+        product: "ALL",
+        onboarding: "ALL",
+        sortBy: "month",
+        sortOrder: "desc"
+      };
+      syncReviewControlValues();
+      renderPlanTable();
+    });
+  }
+}
+
+function bindReviewControl(id, evt, handler) {
+  const el = q(id);
+  if (!el) return;
+  el.addEventListener(evt, () => handler(el.value));
+}
+
+function syncReviewControlValues() {
+  if (q("pa2ReviewSearch")) q("pa2ReviewSearch").value = state.review.search;
+  if (q("pa2ReviewTypeFilter")) q("pa2ReviewTypeFilter").value = state.review.type;
+  if (q("pa2ReviewProductFilter")) q("pa2ReviewProductFilter").value = state.review.product;
+  if (q("pa2ReviewOnboardFilter")) q("pa2ReviewOnboardFilter").value = state.review.onboarding;
+  if (q("pa2ReviewSortBy")) q("pa2ReviewSortBy").value = state.review.sortBy;
+  if (q("pa2ReviewSortOrder")) q("pa2ReviewSortOrder").value = state.review.sortOrder;
+}
+
+function setImportStatus(message, ok) {
+  const el = q("pa2ImportStatus");
+  if (!el) return;
+  el.textContent = message;
+  el.className = ok ? "status ok" : "status";
 }
 
 function importKevaTargetsByAddress(event) {
@@ -267,6 +338,7 @@ function importKevaTargetsByAddress(event) {
 
   if (typeof XLSX === "undefined") {
     setStatus("Excel parser not loaded. Refresh and try again.", false);
+    setImportStatus("Excel parser not loaded. Refresh and try again.", false);
     event.target.value = "";
     return;
   }
@@ -277,9 +349,11 @@ function importKevaTargetsByAddress(event) {
       const data = reader.result;
       const wb = XLSX.read(data, { type: "array" });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+      const rows = parseKevaWorkbookRows(matrix);
       if (!rows.length) {
         setStatus("No rows found in uploaded file.", false);
+        setImportStatus("No rows found in uploaded file.", false);
         return;
       }
 
@@ -288,27 +362,21 @@ function importKevaTargetsByAddress(event) {
       let imported = 0;
       let skipped = 0;
 
-      rows.forEach(raw => {
-        const row = normalizeRowKeys(raw);
-
-        const oemName = firstText(row, [
-          "company", "companyname", "manufacturer", "oem", "oemname", "account", "accountname", "name"
-        ]);
+      rows.forEach(row => {
+        const oemName = String(row.manufacturerName || "").trim();
         if (!oemName) {
           skipped += 1;
           return;
         }
 
-        const address = `${firstText(row, ["address", "addr", "location", "city"])} ${firstText(row, ["state", "province"])} ${firstText(row, ["district"])} `.trim();
+        const address = `${row.address || ""} ${row.state || ""} ${row.sectionState || ""}`.trim();
         const regionId = mapAddressToRegionId(address);
         if (!regionId) {
           skipped += 1;
           return;
         }
 
-        const target = firstNum(row, [
-          "target", "targetl", "potential", "potentiall", "forecast", "forecastl", "kevatarget", "keva"
-        ]);
+        const target = num(row.target || 0);
 
         const duplicate = state.pa2Plans.some(plan =>
           plan.regionId === regionId &&
@@ -351,15 +419,77 @@ function importKevaTargetsByAddress(event) {
       persist();
       renderAll();
       setStatus(`Imported ${imported} KEVA targets by address mapping. Skipped ${skipped} rows.`, imported > 0);
+      setImportStatus(`Imported ${imported} KEVA targets by address mapping. Skipped ${skipped} rows.`, imported > 0);
     } catch (err) {
       console.error(err);
       setStatus("Failed to import KEVA targets. Please upload a valid Excel file.", false);
+      setImportStatus("Failed to import KEVA targets. Please upload a valid Excel file.", false);
     } finally {
       event.target.value = "";
     }
   };
 
   reader.readAsArrayBuffer(file);
+}
+
+function parseKevaWorkbookRows(matrix) {
+  if (!Array.isArray(matrix) || !matrix.length) return [];
+
+  const rows = [];
+  let headerIndex = -1;
+  let currentSectionState = "";
+
+  for (let i = 0; i < matrix.length; i += 1) {
+    const row = Array.isArray(matrix[i]) ? matrix[i] : [];
+    const a = String(row[0] || "").trim();
+    const c = String(row[2] || "").trim();
+    const d = String(row[3] || "").trim();
+    const e = String(row[4] || "").trim();
+
+    const isHeader = a.toLowerCase() === "s. no." && c.toLowerCase().includes("manufacturer") && d.toLowerCase() === "state";
+    if (isHeader) {
+      headerIndex = i;
+      continue;
+    }
+
+    if (headerIndex >= 0) {
+      const rowHasOnlyA = a && !String(row[1] || "").trim() && !c && !d && !e;
+      if (rowHasOnlyA && !/^\d+$/g.test(a)) {
+        currentSectionState = a;
+        continue;
+      }
+
+      if (!/^\d+$/g.test(a)) continue;
+
+      const manufacturerName = c;
+      if (!manufacturerName) continue;
+
+      const stateText = d;
+      const addressText = e;
+      const target = estimateKevaTargetFromRow(row);
+
+      rows.push({
+        serialNo: a,
+        manufacturerName,
+        state: stateText,
+        address: addressText,
+        sectionState: currentSectionState,
+        operationType: String(row[5] || "").trim(),
+        establishedYear: String(row[6] || "").trim(),
+        webAddress: String(row[7] || "").trim(),
+        target
+      });
+    }
+  }
+
+  return rows;
+}
+
+function estimateKevaTargetFromRow(row) {
+  const rawTarget = row[8] || row[9] || row[10] || "";
+  const parsed = Number(String(rawTarget).replace(/,/g, ""));
+  if (Number.isFinite(parsed)) return parsed;
+  return 0;
 }
 
 function normalizeRowKeys(row) {
@@ -444,6 +574,7 @@ function cancelEntry() {
 }
 
 function renderAll() {
+  syncReviewControlValues();
   renderRegionSelector();
   renderRegionTabs();
   renderKpis();
@@ -672,8 +803,13 @@ function renderAccountTypeSnapshot() {
 }
 
 function renderPlanTable() {
-  const rows = filteredPlans();
+  const rows = filteredAndSortedReviewPlans(filteredPlans());
   const tbody = q("pa2PlanRows");
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="21" class="muted">No OEM plans match current review filters.</td></tr>`;
+    return;
+  }
 
   tbody.innerHTML = rows.map((p, idx) => {
     const selectedClass = p.id === selectedPlanId ? " style=\"background:#eef6ff;\"" : "";
@@ -707,6 +843,50 @@ function renderPlanTable() {
   tbody.querySelectorAll("tr[data-id]").forEach(tr => {
     tr.addEventListener("click", () => openPlanManager(tr.dataset.id));
   });
+}
+
+function filteredAndSortedReviewPlans(baseRows) {
+  const search = state.review.search.toLowerCase();
+
+  const filtered = baseRows.filter(plan => {
+    if (state.review.type !== "ALL") {
+      const type = (plan.accountType || "").toUpperCase();
+      if (state.review.type === "OEM" && !type.includes("OEM")) return false;
+      if (state.review.type === "Direct" && !type.includes("DIRECT")) return false;
+    }
+
+    if (state.review.product !== "ALL") {
+      if (!planProducts(plan).includes(state.review.product)) return false;
+    }
+
+    if (state.review.onboarding !== "ALL") {
+      if ((plan.onboardingStatus || "Not Started") !== state.review.onboarding) return false;
+    }
+
+    if (search) {
+      const hay = `${plan.oemName || ""} ${plan.focusStatus || ""} ${plan.nextSteps || ""}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+
+    return true;
+  });
+
+  const sorted = filtered.slice().sort((a, b) => {
+    const sortBy = state.review.sortBy;
+    let cmp = 0;
+
+    if (sortBy === "oemName") cmp = String(a.oemName || "").localeCompare(String(b.oemName || ""));
+    else if (sortBy === "region") cmp = regionName(a.regionId).localeCompare(regionName(b.regionId));
+    else if (sortBy === "forecast") cmp = num(a.annualForecastCr) - num(b.annualForecastCr);
+    else if (sortBy === "actual") cmp = num(a.annualActualCr) - num(b.annualActualCr);
+    else if (sortBy === "gap") cmp = (num(a.annualForecastCr) - num(a.annualActualCr)) - (num(b.annualForecastCr) - num(b.annualActualCr));
+    else cmp = String(a.month || "").localeCompare(String(b.month || ""));
+
+    if (cmp === 0) cmp = String(a.oemName || "").localeCompare(String(b.oemName || ""));
+    return state.review.sortOrder === "asc" ? cmp : -cmp;
+  });
+
+  return sorted;
 }
 
 function renderManagementView() {
