@@ -266,14 +266,7 @@ function setFormVisible(visible) {
 }
 
 function startNewPlan() {
-  selectedPlanId = null;
-  clearForm(false);
-  if (q("pa2Month") && !q("pa2Month").value) {
-    q("pa2Month").value = new Date().toISOString().slice(0, 7);
-  }
-  q("pa2Quarter").value = quarterFromMonth(q("pa2Month").value);
-  setFormVisible(true);
-  setStatus("New OEM plan entry mode.", true);
+  window.location.href = "pa2_oem_manage.html";
 }
 
 function cancelEntry() {
@@ -413,7 +406,7 @@ function renderKpis() {
   const totalForecast = sum(plans.map(p => num(p.annualForecastCr)));
   const totalActual = sum(plans.map(p => num(p.annualActualCr)));
   const accountCount = plans.length;
-  const uniqueProducts = new Set(plans.map(p => p.product)).size;
+  const uniqueProducts = new Set(plans.flatMap(p => planProducts(p))).size;
   const uniqueAccounts = new Set(plans.map(p => p.oemName.toUpperCase())).size;
   const totalVisitPlan = sum(plans.map(p => intNum(p.visitPlan)));
   const totalVisitDone = sum(plans.map(p => intNum(p.visitDone)));
@@ -446,7 +439,7 @@ function renderPlanTable() {
         <td>${esc(regionName(p.regionId))}</td>
         <td>${esc(p.accountType || "-")}</td>
         <td>${esc(p.oemName || "-")}</td>
-        <td>${esc(p.product || "-")}</td>
+        <td>${esc(planProducts(p).join(", ") || "-")}</td>
         <td>${esc(p.month || "-")}</td>
         <td>${esc(p.quarter || quarterFromMonth(p.month))}</td>
         <td>${esc(moneyCr(p.annualForecastCr))}</td>
@@ -468,8 +461,12 @@ function renderPlanTable() {
   }).join("");
 
   tbody.querySelectorAll("tr[data-id]").forEach(tr => {
-    tr.addEventListener("click", () => loadPlanForEdit(tr.dataset.id));
+    tr.addEventListener("click", () => openPlanManager(tr.dataset.id));
   });
+}
+
+function openPlanManager(planId) {
+  window.location.href = `pa2_oem_manage.html?planId=${encodeURIComponent(planId)}`;
 }
 
 function loadPlanForEdit(id) {
@@ -523,6 +520,12 @@ function setStatus(message, ok) {
 function regionName(regionId) {
   const rec = state.regions.find(r => r.id === regionId);
   return rec ? rec.name : "-";
+}
+
+function planProducts(plan) {
+  if (Array.isArray(plan.products) && plan.products.length) return plan.products;
+  if (plan.product) return [plan.product];
+  return [];
 }
 
 function quarterFromMonth(monthValue) {
