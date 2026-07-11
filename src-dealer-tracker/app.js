@@ -345,34 +345,78 @@ function requireUnlock() {
   return false;
 }
 
+function setHierarchyStatus(message, ok) {
+  const el = q("hierarchyStatus");
+  if (!el) return;
+  el.textContent = message;
+  el.className = ok ? "status ok" : "status";
+}
+
 function addRegion() {
-  if (!requireUnlock()) return;
   const name = q("regionName").value.trim();
-  if (!name) return;
+  if (!name) {
+    setHierarchyStatus("Enter Region Name only if you want to create a new region.", false);
+    return;
+  }
+
+  const exists = state.regions.some(r => r.name.toUpperCase() === name.toUpperCase());
+  if (exists) {
+    setHierarchyStatus("Region already exists.", false);
+    return;
+  }
+
   const newRegion = { id: crypto.randomUUID(), name };
   state.regions.push(newRegion);
   q("regionName").value = "";
   persist();
   renderAll();
   if (q("dealerRegion")) q("dealerRegion").value = newRegion.id;
+  setHierarchyStatus(`Region ${name} added.`, true);
 }
 
 function addDealer() {
-  if (!requireUnlock()) return;
   const name = q("dealerName").value.trim();
   const city = q("dealerCity").value.trim();
+  const activeRegionFromTab = q("filterRegion") && q("filterRegion").value !== "ALL" ? q("filterRegion").value : "";
   const dealerRegionEl = q("dealerRegion");
   if (dealerRegionEl && !dealerRegionEl.value && dealerRegionEl.options.length) {
     dealerRegionEl.value = dealerRegionEl.options[0].value;
   }
-  const regionId = (dealerRegionEl && dealerRegionEl.value) || q("entryRegion").value || (state.regions[0] && state.regions[0].id);
-  if (!name || !regionId) return;
+  const regionId = activeRegionFromTab || (dealerRegionEl && dealerRegionEl.value) || q("entryRegion").value || (state.regions[0] && state.regions[0].id);
 
-  state.dealers.push({ id: crypto.randomUUID(), regionId, name, city, person: "", mobile: "", email: "", affinity: "Medium" });
+  if (!name) {
+    setHierarchyStatus("Enter Dealer Name.", false);
+    return;
+  }
+
+  if (!regionId) {
+    setHierarchyStatus("Select a region tab first or create a region.", false);
+    return;
+  }
+
+  const duplicate = state.dealers.some(d => d.regionId === regionId && d.name.toUpperCase() === name.toUpperCase());
+  if (duplicate) {
+    setHierarchyStatus("Dealer already exists in selected region.", false);
+    return;
+  }
+
+  const newDealer = { id: crypto.randomUUID(), regionId, name, city, person: "", mobile: "", email: "", affinity: "Medium" };
+  state.dealers.push(newDealer);
   q("dealerName").value = "";
   q("dealerCity").value = "";
+
+  const filterRegionEl = q("filterRegion");
+  if (filterRegionEl && filterRegionEl.value === "ALL") {
+    filterRegionEl.value = regionId;
+  }
+
   persist();
   renderAll();
+  const filterDealerEl = q("filterDealer");
+  if (filterDealerEl && Array.from(filterDealerEl.options).some(o => o.value === newDealer.id)) {
+    filterDealerEl.value = newDealer.id;
+  }
+  setHierarchyStatus(`Dealer ${name} added to ${regionName(regionId)}.`, true);
 }
 
 function saveForecast() {
