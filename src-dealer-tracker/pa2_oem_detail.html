@@ -80,15 +80,42 @@
           </div>
         </div>
       </div>
+      <div style="margin-top:14px;">
+        <h2 style="margin-bottom:8px;">Product Breakup of Total OEM / Accounts</h2>
+        <p class="muted">Unique OEM/accounts count by product for the current filters.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sr.No</th>
+                <th>Product</th>
+                <th>OEM / Accounts</th>
+                <th>Share %</th>
+                <th>Forecast (Cr)</th>
+                <th>Actual (Cr)</th>
+              </tr>
+            </thead>
+            <tbody id="pa2ProductBreakupRows"></tbody>
+            <tfoot>
+              <tr id="pa2ProductBreakupTotal"></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
     </section>
 
     <section class="card">
       <h2>PA2 Product-Region-OEM Detail</h2>
       <p class="muted">Rows are grouped as Product -> Region -> OEM. Use Product subtotal rows to collapse/expand each product group. Includes subtotals and grand total at bottom.</p>
+      <div class="row" style="margin-top:8px; margin-bottom:10px;">
+        <button class="btn secondary" id="detailCollapseAll" type="button">Collapse All Products</button>
+        <button class="btn ghost" id="detailExpandAll" type="button">Expand All Products</button>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th>Sr.No</th>
               <th>Product</th>
               <th>Region</th>
               <th>OEM / Account</th>

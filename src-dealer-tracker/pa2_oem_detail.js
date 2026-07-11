@@ -69,6 +69,23 @@ function bindEvents() {
       renderAll();
     });
   }
+
+  const collapseAllEl = document.getElementById("detailCollapseAll");
+  if (collapseAllEl) {
+    collapseAllEl.addEventListener("click", () => {
+      const products = new Set(filteredRows().map(r => r.product));
+      state.collapsedProducts = products;
+      renderAll();
+    });
+  }
+
+  const expandAllEl = document.getElementById("detailExpandAll");
+  if (expandAllEl) {
+    expandAllEl.addEventListener("click", () => {
+      state.collapsedProducts = new Set();
+      renderAll();
+    });
+  }
 }
 
 function bindChange(id, handler) {
@@ -81,6 +98,7 @@ function renderAll() {
   const rows = filteredRows();
   renderDetailKpis(rows);
   renderPieChart(rows);
+  renderProductBreakup(rows);
   renderDetailTable(rows);
 }
 
@@ -258,6 +276,69 @@ function renderPieChart(rows) {
   }).join("");
 }
 
+function renderProductBreakup(rows) {
+  const tbody = document.getElementById("pa2ProductBreakupRows");
+  const totalRow = document.getElementById("pa2ProductBreakupTotal");
+  if (!tbody || !totalRow) return;
+
+  const byProduct = new Map();
+  rows.forEach(r => {
+    if (!byProduct.has(r.product)) {
+      byProduct.set(r.product, {
+        oems: new Set(),
+        forecast: 0,
+        actual: 0
+      });
+    }
+    const rec = byProduct.get(r.product);
+    rec.oems.add((r.oemName || "-").toUpperCase());
+    rec.forecast += r.forecast;
+    rec.actual += r.actual;
+  });
+
+  const entries = Array.from(byProduct.entries())
+    .map(([product, rec]) => ({
+      product,
+      oemCount: rec.oems.size,
+      forecast: rec.forecast,
+      actual: rec.actual
+    }))
+    .sort((a, b) => b.oemCount - a.oemCount || a.product.localeCompare(b.product));
+
+  const totalOems = entries.reduce((acc, e) => acc + e.oemCount, 0);
+  const totalForecast = entries.reduce((acc, e) => acc + e.forecast, 0);
+  const totalActual = entries.reduce((acc, e) => acc + e.actual, 0);
+
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">No records available for current filters.</td></tr>`;
+    totalRow.innerHTML = `<th>-</th><th>Total</th><th>0</th><th>0.0%</th><th>0.00</th><th>0.00</th>`;
+    return;
+  }
+
+  tbody.innerHTML = entries.map((e, idx) => {
+    const share = totalOems > 0 ? ((e.oemCount / totalOems) * 100).toFixed(1) : "0.0";
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${esc(e.product)}</td>
+        <td>${esc(String(e.oemCount))}</td>
+        <td>${esc(share)}%</td>
+        <td>${esc(moneyCr(e.forecast))}</td>
+        <td>${esc(moneyCr(e.actual))}</td>
+      </tr>
+    `;
+  }).join("");
+
+  totalRow.innerHTML = `
+    <th>-</th>
+    <th>Total</th>
+    <th>${esc(String(totalOems))}</th>
+    <th>100.0%</th>
+    <th>${esc(moneyCr(totalForecast))}</th>
+    <th>${esc(moneyCr(totalActual))}</th>
+  `;
+}
+
 function renderDetailTable(rows) {
   const tbody = document.getElementById("pa2DetailRows");
   const grand = document.getElementById("pa2DetailGrandTotal");
@@ -303,6 +384,7 @@ function renderGroupedTable(rows, tbody, grand, level1Key, level2Key) {
   const out = [];
   let grandForecast = 0;
   let grandActual = 0;
+  let srNo = 1;
 
   Array.from(level1Map.keys()).sort().forEach(l1 => {
     const l1Rec = level1Map.get(l1);
@@ -312,8 +394,9 @@ function renderGroupedTable(rows, tbody, grand, level1Key, level2Key) {
     const isProductGrouping = level1Key === "product";
     const isCollapsed = isProductGrouping && state.collapsedProducts.has(l1);
 
+    const productGroupCount = Array.from(l1Rec.sub.values()).reduce((acc, s) => acc + s.rows.length, 0);
     out.push(buildSummaryRow(
-      `${capitalize(level1Key)} Subtotal`,
+      `${capitalize(level1Key)} Subtotal (${productGroupCount})`,
       level1Key === "product" ? l1 : "All Products",
       level1Key === "region" ? l1 : "All Regions",
       "-",
@@ -322,19 +405,32 @@ function renderGroupedTable(rows, tbody, grand, level1Key, level2Key) {
       statusFrom(l1Rec.forecast, l1Rec.actual),
       "-",
       isProductGrouping
-        ? `<button type="button" class="btn ghost" style="padding:4px 10px;" data-toggle-product="${encodeURIComponent(l1)}">${isCollapsed ? "Expand" : "Collapse"}</button>`
-        : ""
+        ? `<button type="button" class="detail-toggle" data-toggle-product="${encodeURIComponent(l1)}">${isCollapsed ? "+ Expand" : "- Collapse"}</button><span class="detail-seg-tag">Product Group</span> `
+        : `<span class="detail-seg-tag">${esc(capitalize(level1Key))}</span> `,
+      "detail-product-row"
     ));
 
     if (isCollapsed) return;
 
     Array.from(l1Rec.sub.keys()).sort().forEach(l2 => {
       const l2Rec = l1Rec.sub.get(l2);
-      out.push(buildSummaryRow(`${capitalize(level2Key)} Subtotal`, level1Key === "product" ? l1 : l2, level1Key === "region" ? l1 : l2, "-", l2Rec.forecast, l2Rec.actual, statusFrom(l2Rec.forecast, l2Rec.actual), "-"));
+      out.push(buildSummaryRow(
+        `${capitalize(level2Key)} Subtotal (${l2Rec.rows.length})`,
+        level1Key === "product" ? l1 : l2,
+        level1Key === "region" ? l1 : l2,
+        "-",
+        l2Rec.forecast,
+        l2Rec.actual,
+        statusFrom(l2Rec.forecast, l2Rec.actual),
+        "-",
+        `<span class="detail-seg-tag">${esc(capitalize(level2Key))}</span> `,
+        "detail-region-row"
+      ));
 
       l2Rec.rows.sort((a, b) => a.oemName.localeCompare(b.oemName)).forEach(r => {
         out.push(`
-          <tr>
+          <tr class="detail-oem-row">
+            <td>${srNo++}</td>
             <td>${esc(r.product)}</td>
             <td>${esc(r.region)}</td>
             <td>${esc(r.oemName)}</td>
@@ -363,6 +459,7 @@ function renderGroupedTable(rows, tbody, grand, level1Key, level2Key) {
 
   const gStatus = statusFrom(grandForecast, grandActual);
   grand.innerHTML = `
+    <th>-</th>
     <th>All Products</th>
     <th>All Regions</th>
     <th>Grand Total</th>
@@ -375,8 +472,9 @@ function renderGroupedTable(rows, tbody, grand, level1Key, level2Key) {
 }
 
 function renderFlatTable(rows, tbody, grand) {
-  const out = rows.map(r => `
+  const out = rows.map((r, idx) => `
     <tr>
+      <td>${idx + 1}</td>
       <td>${esc(r.product)}</td>
       <td>${esc(r.region)}</td>
       <td>${esc(r.oemName)}</td>
@@ -395,6 +493,7 @@ function renderFlatTable(rows, tbody, grand) {
   const s = statusFrom(totalForecast, totalActual);
 
   grand.innerHTML = `
+    <th>-</th>
     <th>All Products</th>
     <th>All Regions</th>
     <th>Grand Total</th>
@@ -406,9 +505,10 @@ function renderFlatTable(rows, tbody, grand) {
   `;
 }
 
-function buildSummaryRow(label, product, region, oem, forecast, actual, status, onboarding, prefixHtml = "") {
+function buildSummaryRow(label, product, region, oem, forecast, actual, status, onboarding, prefixHtml = "", rowClass = "detail-subtotal-row") {
   return `
-    <tr class="detail-subtotal-row">
+    <tr class="${rowClass}">
+      <td>-</td>
       <td>${esc(product)}</td>
       <td>${esc(region)}</td>
       <td>${prefixHtml}${esc(label)}</td>

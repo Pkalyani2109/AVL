@@ -23,6 +23,14 @@
 body {
   margin: 0;
   font-family: "Public Sans", "Segoe UI", sans-serif;
+  background:
+    linear-gradient(145deg, rgba(10, 93, 168, 0.08), transparent 42%),
+    radial-gradient(circle at 78% -6%, #ffffff 0%, transparent 35%),
+    radial-gradient(circle at 5% 8%, var(--bg-deep) 0%, transparent 30%),
+    var(--bg);
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
 
 .mgmt-status {
   display: inline-block;
@@ -51,13 +59,99 @@ body {
   background: #edf2fa;
   color: #425b7a;
 }
-  background:
-    linear-gradient(145deg, rgba(10, 93, 168, 0.08), transparent 42%),
-    radial-gradient(circle at 78% -6%, #ffffff 0%, transparent 35%),
-    radial-gradient(circle at 5% 8%, var(--bg-deep) 0%, transparent 30%),
-    var(--bg);
-  color: var(--ink);
-  letter-spacing: 0.01em;
+
+.pa2-pie-wrap {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.pa2-pie {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #f7fbff;
+}
+
+.pa2-pie-legend {
+  display: grid;
+  gap: 6px;
+}
+
+.pa2-pie-legend .item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.pa2-pie-legend .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: 0 0 10px;
+}
+
+@media (max-width: 920px) {
+  .pa2-pie-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .pa2-pie {
+    margin: 0 auto;
+  }
+}
+
+.detail-product-row {
+  background: #e6f0ff;
+  font-weight: 800;
+}
+
+.detail-region-row {
+  background: #f2f7ff;
+  font-weight: 700;
+}
+
+.detail-subtotal-row {
+  background: #f4f8ff;
+  font-weight: 700;
+}
+
+.detail-oem-row td:nth-child(4) {
+  padding-left: 16px;
+}
+
+.detail-seg-tag {
+  display: inline-block;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #bcd0e9;
+  background: #f9fbff;
+  color: #34597f;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.detail-toggle {
+  margin-right: 8px;
+  border: 1px solid #b7cae4;
+  background: #ffffff;
+  color: #15497b;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.detail-toggle:hover {
+  background: #f0f6ff;
 }
 
 .topbar {

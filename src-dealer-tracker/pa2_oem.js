@@ -14,6 +14,8 @@ const DEFAULT_REGION_NAMES = [
   "TEXTILE"
 ];
 
+const ALL_REGION_VALUE = "__ALL__";
+
 const SEED_SEGMENTS = "Power | Steel | Paper | Cement | Oil & Gas | Pharma | Food & Beverage";
 const SEED_STRATEGY = "Spec Development | Value Engineering | Market Expansion | Dealer Network | Pricing";
 const SEEDED_PA2_PLANS = [
@@ -280,6 +282,7 @@ function renderAll() {
   renderRegionSelector();
   renderRegionTabs();
   renderKpis();
+  renderAccountTypeSnapshot();
   renderManagementView();
   renderPlanTable();
 }
@@ -289,12 +292,13 @@ function renderRegionSelector() {
   const prev = sel.value;
   sel.innerHTML = "";
 
+  sel.appendChild(opt(ALL_REGION_VALUE, "All Regions"));
   state.regions.forEach(r => sel.appendChild(opt(r.id, r.name)));
 
   if (Array.from(sel.options).some(o => o.value === prev)) {
     sel.value = prev;
   } else if (sel.options.length) {
-    sel.value = sel.options[0].value;
+    sel.value = ALL_REGION_VALUE;
   }
 }
 
@@ -303,9 +307,12 @@ function renderRegionTabs() {
   if (!wrap) return;
   const active = q("pa2Region").value;
 
-  wrap.innerHTML = state.regions.map(r => (
+  const allTab = `<button class="region-tab ${ALL_REGION_VALUE === active ? "active" : ""}" data-region-id="${ALL_REGION_VALUE}">All</button>`;
+  const regionTabs = state.regions.map(r => (
     `<button class="region-tab ${r.id === active ? "active" : ""}" data-region-id="${esc(r.id)}">${esc(r.name)}</button>`
   )).join("");
+
+  wrap.innerHTML = allTab + regionTabs;
 
   wrap.querySelectorAll(".region-tab").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -343,6 +350,10 @@ function savePlan() {
 
   if (!plan.regionId) {
     setStatus("Select region/branch first.", false);
+    return;
+  }
+  if (plan.regionId === ALL_REGION_VALUE) {
+    setStatus("Select a specific region to save a plan.", false);
     return;
   }
   if (!plan.oemName) {
@@ -428,6 +439,73 @@ function renderKpis() {
   )).join("");
 }
 
+function renderAccountTypeSnapshot() {
+  const tbody = q("pa2AccountTypeRows");
+  const totalRow = q("pa2AccountTypeTotal");
+  if (!tbody || !totalRow) return;
+
+  const plans = filteredPlans();
+  const grouped = new Map();
+
+  plans.forEach(plan => {
+    const accountType = (plan.accountType || "OEM").toUpperCase().includes("DIRECT") ? "Direct Account" : "OEM";
+    if (!grouped.has(accountType)) {
+      grouped.set(accountType, {
+        accounts: new Set(),
+        forecast: 0,
+        actual: 0
+      });
+    }
+
+    const rec = grouped.get(accountType);
+    rec.accounts.add((plan.oemName || "-").trim().toUpperCase());
+    rec.forecast += num(plan.annualForecastCr);
+    rec.actual += num(plan.annualActualCr);
+  });
+
+  const rows = Array.from(grouped.entries())
+    .map(([type, rec]) => ({
+      type,
+      accounts: rec.accounts.size,
+      forecast: rec.forecast,
+      actual: rec.actual
+    }))
+    .sort((a, b) => b.accounts - a.accounts || a.type.localeCompare(b.type));
+
+  const totalAccounts = rows.reduce((acc, r) => acc + r.accounts, 0);
+  const totalForecast = rows.reduce((acc, r) => acc + r.forecast, 0);
+  const totalActual = rows.reduce((acc, r) => acc + r.actual, 0);
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">No plans available for current region filter.</td></tr>`;
+    totalRow.innerHTML = `<th>-</th><th>Total</th><th>0</th><th>0.0%</th><th>0.00</th><th>0.00</th>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, idx) => {
+    const share = totalAccounts ? ((r.accounts / totalAccounts) * 100).toFixed(1) : "0.0";
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${esc(r.type)}</td>
+        <td>${esc(String(r.accounts))}</td>
+        <td>${esc(share)}%</td>
+        <td>${esc(moneyCr(r.forecast))}</td>
+        <td>${esc(moneyCr(r.actual))}</td>
+      </tr>
+    `;
+  }).join("");
+
+  totalRow.innerHTML = `
+    <th>-</th>
+    <th>Total</th>
+    <th>${esc(String(totalAccounts))}</th>
+    <th>100.0%</th>
+    <th>${esc(moneyCr(totalForecast))}</th>
+    <th>${esc(moneyCr(totalActual))}</th>
+  `;
+}
+
 function renderPlanTable() {
   const rows = filteredPlans();
   const tbody = q("pa2PlanRows");
@@ -471,9 +549,14 @@ function renderManagementView() {
   const totalRow = q("pa2MgmtTotalRow");
   if (!tbody || !totalRow) return;
 
+  const selectedRegionId = q("pa2Region") ? q("pa2Region").value : "";
+  const applyRegionFilter = selectedRegionId && selectedRegionId !== ALL_REGION_VALUE;
+
   const grouped = new Map();
 
   state.pa2Plans.forEach(plan => {
+    if (applyRegionFilter && plan.regionId !== selectedRegionId) return;
+
     const products = planProducts(plan);
     products.forEach(product => {
       const key = `${plan.regionId}::${product}`;
@@ -577,7 +660,7 @@ function loadPlanForEdit(id) {
 function filteredPlans() {
   const regionId = q("pa2Region").value;
   return state.pa2Plans
-    .filter(p => p.regionId === regionId)
+    .filter(p => regionId === ALL_REGION_VALUE || p.regionId === regionId)
     .sort((a, b) => {
       const monthCmp = String(a.month || "").localeCompare(String(b.month || ""));
       if (monthCmp !== 0) return monthCmp;

@@ -16,6 +16,7 @@
       <a class="btn secondary" href="dealerwise.html">PA1 Dealer-wise</a>
       <a class="btn secondary" href="pa2_oem.html">PA2 OEM List</a>
       <a class="btn secondary" href="pa2_oem_manage.html">PA2 OEM Manager</a>
+      <a class="btn secondary" href="pa2_oem_detail.html">PA2 Detailed View</a>
       <a class="btn ghost" href="../janatics_part_number_generator_all_products.html">Product Code Generator</a>
     </div>
   </header>
@@ -160,6 +161,28 @@
     <section class="card kpi-card">
       <h2>PA2 Snapshot</h2>
       <div class="kpis" id="pa2KpiGrid"></div>
+      <div style="margin-top:14px;">
+        <h3 style="margin-bottom:8px;">OEM / Direct Accounts Snapshot</h3>
+        <p class="muted">Breakup by account type for the selected region context.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sr.No</th>
+                <th>Account Type</th>
+                <th>Accounts</th>
+                <th>Share %</th>
+                <th>Forecast (Cr)</th>
+                <th>Actual (Cr)</th>
+              </tr>
+            </thead>
+            <tbody id="pa2AccountTypeRows"></tbody>
+            <tfoot>
+              <tr id="pa2AccountTypeTotal"></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
     </section>
 
     <section class="card">
