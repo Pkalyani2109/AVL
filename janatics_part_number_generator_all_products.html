@@ -2176,6 +2176,28 @@
       };
       let y = margin;
 
+      function getValveSizingPdfText() {
+        if (!currentGenerated) return "";
+        const { productKey, values } = currentGenerated;
+        if (!(productKey === "ball" || productKey === "butterfly")) return "";
+        if (!values || !["2", "3", "4"].includes(values.actuation)) return "";
+
+        const sizing = productKey === "ball"
+          ? getBallActuatorSizing(values)
+          : getButterflyActuatorSizing(values);
+
+        if (!sizing) return "";
+
+        return [
+          `${sizing.actuationLabel} for ${sizing.productLabel || "Valve"} ${sizing.valveSize}`,
+          `Model: ${sizing.model}`,
+          `Valve Torque: ${formatNm(sizing.valveTorque)} Nm`,
+          `${sizing.torqueText}`,
+          `Factor Of Safety: ${formatFos(sizing.fos)}`,
+          `${sizing.meta}`
+        ].join("\n");
+      }
+
       function newPage() {
         doc.addPage();
         y = margin;
@@ -2242,9 +2264,13 @@
 
       drawHeader();
       const compatibilityPdfText = String(currentCompatibilityText || "Not checked.").replaceAll(" | ", "\n");
+      const valveSizingPdfText = getValveSizingPdfText();
       drawSection("Part Number", currentGenerated.displayedCode, false);
       drawSection("Compact / Catalogue Code", currentGenerated.compactCode, false);
       drawSection("Description", currentGenerated.fullDescription, false);
+      if (valveSizingPdfText) {
+        drawSection("Valve Actuator Sizing", valveSizingPdfText, false);
+      }
       drawSection("Chemical Compatability", compatibilityPdfText, false);
       drawSection("Chemical Compatability Caution", COMPATABILITY_CAUTION, true);
       drawSection("Review Notes", currentGenerated.notes.length ? currentGenerated.notes.join(" | ") : "No special review note.", false);
