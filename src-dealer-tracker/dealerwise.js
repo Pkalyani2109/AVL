@@ -381,6 +381,7 @@ function downloadDealerTemplate() {
   const month = q("dwMonth").value || new Date().toISOString().slice(0, 7);
   const region = selectedRegion();
   const dealer = selectedDealer();
+  const rowsPerProduct = 10;
 
   const header = [
     "month",
@@ -396,21 +397,26 @@ function downloadDealerTemplate() {
     "stage"
   ];
 
-  const sample = [
-    month,
-    region ? region.name : "",
-    dealer ? dealer.name : "",
-    dealer && dealer.salesEngineer ? dealer.salesEngineer : "",
-    "BFV - Butterfly Valve",
-    "",
-    "0",
-    "0",
-    dealer && dealer.affinity ? dealer.affinity : "Medium",
-    dealer && dealer.affinityReason ? dealer.affinityReason : "Strong fit for local process-valve demand",
-    "Prospect"
-  ];
+  const rows = [header];
+  PRODUCTS.forEach(product => {
+    for (let i = 1; i <= rowsPerProduct; i += 1) {
+      rows.push([
+        month,
+        region ? region.name : "",
+        dealer ? dealer.name : "",
+        dealer && dealer.salesEngineer ? dealer.salesEngineer : "",
+        productLabel(product),
+        `${product.replace(/[^A-Z]/g, "")} Account ${String(i).padStart(2, "0")}`,
+        "0",
+        "0",
+        dealer && dealer.affinity ? dealer.affinity : "Medium",
+        dealer && dealer.affinityReason ? dealer.affinityReason : "Strong fit for local process-valve demand",
+        "Prospect"
+      ]);
+    }
+  });
 
-  const csv = [header, sample].map(row => row.map(csvEscape).join(",")).join("\n");
+  const csv = rows.map(row => row.map(csvEscape).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -418,7 +424,7 @@ function downloadDealerTemplate() {
   a.download = `dealer_data_template_${month}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  setImportStatus("Template downloaded. Fill in Excel and upload CSV.", true);
+  setImportStatus("Template downloaded with 10 prefilled account rows per product. Fill in Excel and upload CSV.", true);
 }
 
 function ensureRegion(regionName) {
