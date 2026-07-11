@@ -42,6 +42,8 @@
       <h2>OEM Plan Entry</h2>
       <div class="row" style="margin-top:0; margin-bottom:8px;">
         <button id="btnPa2NewPlan" class="btn">Add New OEM Plan</button>
+        <button id="btnPa2ImportKeva" class="btn secondary">Import KEVA Targets (Address-based)</button>
+        <input id="pa2ImportKevaFile" type="file" accept=".xlsx,.xls,.csv" style="display:none;" />
       </div>
 
       <div id="pa2EntryFormWrap" style="display:none;">
@@ -244,6 +246,7 @@
     </section>
   </main>
 
-  <script src="pa2_oem.js?v=20260711-03"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="pa2_oem.js?v=20260711-05"></script>
 </body>
 </html>

@@ -242,6 +242,12 @@ function persist() {
 
 function bindEvents() {
   q("btnPa2NewPlan").addEventListener("click", startNewPlan);
+  const importBtn = q("btnPa2ImportKeva");
+  const importInput = q("pa2ImportKevaFile");
+  if (importBtn && importInput) {
+    importBtn.addEventListener("click", () => importInput.click());
+    importInput.addEventListener("change", importKevaTargetsByAddress);
+  }
   q("pa2Region").addEventListener("change", () => {
     selectedPlanId = null;
     renderAll();
@@ -253,6 +259,165 @@ function bindEvents() {
   q("btnPa2CancelEdit").addEventListener("click", cancelEntry);
   q("btnPa2ClearForm").addEventListener("click", clearForm);
   q("btnPa2RemovePlan").addEventListener("click", removeSelectedPlan);
+}
+
+function importKevaTargetsByAddress(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (typeof XLSX === "undefined") {
+    setStatus("Excel parser not loaded. Refresh and try again.", false);
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = reader.result;
+      const wb = XLSX.read(data, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      if (!rows.length) {
+        setStatus("No rows found in uploaded file.", false);
+        return;
+      }
+
+      const month = q("pa2Month") && q("pa2Month").value ? q("pa2Month").value : new Date().toISOString().slice(0, 7);
+      const quarter = quarterFromMonth(month);
+      let imported = 0;
+      let skipped = 0;
+
+      rows.forEach(raw => {
+        const row = normalizeRowKeys(raw);
+
+        const oemName = firstText(row, [
+          "company", "companyname", "manufacturer", "oem", "oemname", "account", "accountname", "name"
+        ]);
+        if (!oemName) {
+          skipped += 1;
+          return;
+        }
+
+        const address = `${firstText(row, ["address", "addr", "location", "city"])} ${firstText(row, ["state", "province"])} ${firstText(row, ["district"])} `.trim();
+        const regionId = mapAddressToRegionId(address);
+        if (!regionId) {
+          skipped += 1;
+          return;
+        }
+
+        const target = firstNum(row, [
+          "target", "targetl", "potential", "potentiall", "forecast", "forecastl", "kevatarget", "keva"
+        ]);
+
+        const duplicate = state.pa2Plans.some(plan =>
+          plan.regionId === regionId &&
+          String(plan.oemName || "").trim().toUpperCase() === oemName.toUpperCase() &&
+          String(plan.product || "").toUpperCase() === "KEVA" &&
+          String(plan.month || "") === month
+        );
+
+        if (duplicate) {
+          skipped += 1;
+          return;
+        }
+
+        state.pa2Plans.push({
+          id: crypto.randomUUID(),
+          regionId,
+          accountType: "OEM",
+          oemName,
+          product: "KEVA",
+          month,
+          quarter,
+          annualForecastCr: num(target),
+          annualActualCr: 0,
+          focusStatus: "Imported from address-based KEVA target list",
+          nextSteps: "Validate address mapping and target with region owner.",
+          segments: "",
+          strategy: "",
+          initiative: "KEVA regional target onboarding",
+          visitPlan: 0,
+          visitDone: 0,
+          onboardingStatus: "Not Started",
+          onboardingSteps: "Qualification and onboarding pending.",
+          actionPlan: "Initiate KEVA opportunity conversion for mapped region accounts.",
+          owner: "Branch Team",
+          updatedAt: new Date().toISOString()
+        });
+        imported += 1;
+      });
+
+      persist();
+      renderAll();
+      setStatus(`Imported ${imported} KEVA targets by address mapping. Skipped ${skipped} rows.`, imported > 0);
+    } catch (err) {
+      console.error(err);
+      setStatus("Failed to import KEVA targets. Please upload a valid Excel file.", false);
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function normalizeRowKeys(row) {
+  const out = {};
+  Object.keys(row || {}).forEach(key => {
+    const norm = String(key || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    out[norm] = row[key];
+  });
+  return out;
+}
+
+function firstText(row, keys) {
+  for (const key of keys) {
+    const v = row[key];
+    if (v == null) continue;
+    const text = String(v).trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+function firstNum(row, keys) {
+  for (const key of keys) {
+    const raw = row[key];
+    if (raw == null || raw === "") continue;
+    const n = Number(String(raw).replace(/,/g, ""));
+    if (Number.isFinite(n)) return n;
+  }
+  return 0;
+}
+
+function mapAddressToRegionId(addressText) {
+  const text = String(addressText || "").toLowerCase();
+  const map = [
+    { region: "BANGALORE", keys: ["karnataka", "bengaluru", "bangalore", "mysuru", "belgaum", "hubli", "mangalore"] },
+    { region: "CBE 2", keys: ["coimbatore", "erode", "salem", "karur", "trichy", "tiruchirappalli", "madurai"] },
+    { region: "TEXTILE", keys: ["tiruppur", "tirupur", "textile", "ichalkaranji"] },
+    { region: "CHENNAI 1", keys: ["chennai", "tamil nadu", "pondicherry", "puducherry"] },
+    { region: "DELHI 1", keys: ["delhi", "gurgaon", "gurugram", "noida", "ghaziabad", "faridabad", "haryana", "punjab", "rajasthan", "uttar pradesh", "uttarakhand", "himachal"] },
+    { region: "GUJARAT", keys: ["gujarat", "ahmedabad", "vadodara", "surat", "rajkot", "gandhinagar", "jamnagar"] },
+    { region: "HYDERABAD", keys: ["hyderabad", "telangana", "andhra", "vizag", "vishakhapatnam", "vijayawada"] },
+    { region: "INDORE", keys: ["indore", "madhya pradesh", "bhopal", "ujjain", "gwalior"] },
+    { region: "KOLKATA", keys: ["kolkata", "west bengal", "howrah", "durgapur", "jharkhand", "bihar", "odisha", "assam", "guwahati", "chhattisgarh"] },
+    { region: "MUMBAI-2", keys: ["navi mumbai", "thane", "palghar"] },
+    { region: "PUNE", keys: ["pune", "nashik", "aurangabad", "kolhapur", "satara"] },
+    { region: "MUMBAI", keys: ["mumbai", "maharashtra"] }
+  ];
+
+  for (const rec of map) {
+    if (rec.keys.some(k => text.includes(k))) {
+      const region = state.regions.find(r => String(r.name || "").toUpperCase() === rec.region);
+      if (region) return region.id;
+    }
+  }
+
+  const selected = q("pa2Region") ? q("pa2Region").value : "";
+  if (selected && selected !== ALL_REGION_VALUE) return selected;
+  return state.regions[0] ? state.regions[0].id : "";
 }
 
 function setDefaults() {
