@@ -140,7 +140,7 @@ function renderReusableAccountOptions() {
     .filter(a => a.regionId === region.id && a.dealerId === dealer.id)
     .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))
     .forEach(a => {
-      const key = `${(a.account || "").trim().toUpperCase()}::${a.product || "PA"}`;
+      const key = (a.account || "").trim().toUpperCase();
       if (!a.account || unique.has(key)) return;
       unique.set(key, a);
     });
@@ -148,8 +148,7 @@ function renderReusableAccountOptions() {
   Array.from(unique.values())
     .sort((a, b) => String(a.account || "").localeCompare(String(b.account || "")))
     .forEach(a => {
-      const value = `${a.account}|||${a.product || "PA"}`;
-      select.appendChild(opt(value, `${a.account} (${productLabel(a.product || "PA")})`));
+      select.appendChild(opt(a.account, a.account));
     });
 
   if (Array.from(select.options).some(o => o.value === previous)) {
@@ -161,9 +160,8 @@ function onReuseAccountChange() {
   const select = q("dwAccountSelect");
   if (!select || !select.value) return;
 
-  const [accountName, product] = select.value.split("|||");
+  const accountName = select.value;
   q("dwAccountName").value = accountName || "";
-  if (q("dwAccountProduct") && product) q("dwAccountProduct").value = product;
 
   const dealer = selectedDealer();
   const region = selectedRegion();
@@ -173,12 +171,12 @@ function onReuseAccountChange() {
     .filter(a =>
       a.regionId === region.id &&
       a.dealerId === dealer.id &&
-      String(a.account || "").trim().toUpperCase() === accountName.trim().toUpperCase() &&
-      (a.product || "PA") === (product || "PA")
+      String(a.account || "").trim().toUpperCase() === accountName.trim().toUpperCase()
     )
     .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))[0];
 
   if (!latest) return;
+  if (q("dwAccountProduct")) q("dwAccountProduct").value = latest.product || "PA";
   q("dwAccountPotential").value = num(latest.potential);
   q("dwAccountForecast").value = num(latest.forecast);
   q("dwAccountStage").value = latest.stage || "Prospect";
@@ -303,7 +301,7 @@ function addKeyAccount() {
   const region = selectedRegion();
   const month = q("dwMonth").value;
   const selectedValue = q("dwAccountSelect") ? q("dwAccountSelect").value : "";
-  const selectedName = selectedValue ? String(selectedValue.split("|||")[0] || "").trim() : "";
+  const selectedName = selectedValue ? String(selectedValue || "").trim() : "";
   const account = q("dwAccountName").value.trim() || selectedName;
   const product = q("dwAccountProduct") ? q("dwAccountProduct").value : "PA";
   if (!dealer || !region || !month || !account) return;
