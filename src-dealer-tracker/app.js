@@ -349,17 +349,19 @@ function addRegion() {
   if (!requireUnlock()) return;
   const name = q("regionName").value.trim();
   if (!name) return;
-  state.regions.push({ id: crypto.randomUUID(), name });
+  const newRegion = { id: crypto.randomUUID(), name };
+  state.regions.push(newRegion);
   q("regionName").value = "";
   persist();
   renderAll();
+  if (q("dealerRegion")) q("dealerRegion").value = newRegion.id;
 }
 
 function addDealer() {
   if (!requireUnlock()) return;
   const name = q("dealerName").value.trim();
   const city = q("dealerCity").value.trim();
-  const regionId = q("entryRegion").value || (state.regions[0] && state.regions[0].id);
+  const regionId = (q("dealerRegion") && q("dealerRegion").value) || q("entryRegion").value || (state.regions[0] && state.regions[0].id);
   if (!name || !regionId) return;
 
   state.dealers.push({ id: crypto.randomUUID(), regionId, name, city, person: "", mobile: "", email: "", affinity: "Medium" });
@@ -569,7 +571,7 @@ function affinityClass(value) {
 
 function fillRegionDealerSelects() {
   const regionSelectIds = [
-    "filterRegion", "entryRegion", "supportRegion", "accountRegion", "activityRegion"
+    "filterRegion", "entryRegion", "supportRegion", "accountRegion", "activityRegion", "dealerRegion"
   ];
 
   regionSelectIds.forEach(id => {
