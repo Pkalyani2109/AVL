@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PA2 OEM Detailed View</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>PA2 OEM Detailed View</h1>
+    <p>Detailed management table by Product -> Region -> OEM with subtotals and grand totals.</p>
+    <p class="muted" style="margin-top:8px; color:#e7f0fb;">Quick Navigation</p>
+    <div class="row" style="margin-top:10px;">
+      <a class="btn secondary" href="index.html">PA1 Home</a>
+      <a class="btn secondary" href="dealerwise.html">PA1 Dealer-wise</a>
+      <a class="btn secondary" href="pa2_oem.html">PA2 OEM List</a>
+      <a class="btn secondary" href="pa2_oem_manage.html">PA2 OEM Manager</a>
+      <a class="btn secondary" href="pa2_oem_detail.html">PA2 Detailed View</a>
+      <a class="btn ghost" href="../janatics_part_number_generator_all_products.html">Product Code Generator</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="card kpi-card">
+      <h2>Detail Snapshot</h2>
+      <div class="kpis" id="pa2DetailKpis"></div>
+      <div class="grid two" style="margin-top:12px;">
+        <div>
+          <h2 style="margin-bottom:8px;">Product Breakup by Forecast</h2>
+          <div class="pa2-pie-wrap">
+            <div id="pa2ProductPie" class="pa2-pie"></div>
+            <div id="pa2ProductPieLegend" class="pa2-pie-legend"></div>
+          </div>
+        </div>
+        <div>
+          <h2 style="margin-bottom:8px;">Table Controls</h2>
+          <div class="grid two">
+            <label>
+              Region Filter
+              <select id="detailFilterRegion"></select>
+            </label>
+            <label>
+              Product Filter
+              <select id="detailFilterProduct"></select>
+            </label>
+            <label>
+              Status Filter
+              <select id="detailFilterStatus">
+                <option value="ALL">All Status</option>
+                <option value="On Track">On Track</option>
+                <option value="Watch">Watch</option>
+                <option value="At Risk">At Risk</option>
+                <option value="No Plan">No Plan</option>
+              </select>
+            </label>
+            <label>
+              Search OEM
+              <input id="detailSearchOem" type="text" placeholder="Type OEM/account name" />
+            </label>
+            <label>
+              Group By
+              <select id="detailGroupBy">
+                <option value="product-region">Product -> Region -> OEM</option>
+                <option value="region-product">Region -> Product -> OEM</option>
+                <option value="flat">Flat OEM Rows</option>
+              </select>
+            </label>
+            <label>
+              Sort By
+              <select id="detailSortBy">
+                <option value="product-asc">Product A-Z</option>
+                <option value="region-asc">Region A-Z</option>
+                <option value="oem-asc">OEM A-Z</option>
+                <option value="forecast-desc">Forecast High-Low</option>
+                <option value="actual-desc">Actual High-Low</option>
+                <option value="gap-desc">Gap High-Low</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>PA2 Product-Region-OEM Detail</h2>
+      <p class="muted">Rows are grouped as Product -> Region -> OEM. Use Product subtotal rows to collapse/expand each product group. Includes subtotals and grand total at bottom.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Region</th>
+              <th>OEM / Account</th>
+              <th>Forecast (Cr)</th>
+              <th>Actual (Cr)</th>
+              <th>Gap (Cr)</th>
+              <th>Status</th>
+              <th>Onboarding Milestone</th>
+            </tr>
+          </thead>
+          <tbody id="pa2DetailRows"></tbody>
+          <tfoot>
+            <tr id="pa2DetailGrandTotal"></tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="pa2_oem_detail.js?v=20260711-01"></script>
+</body>
+</html>
