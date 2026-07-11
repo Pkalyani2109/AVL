@@ -280,6 +280,7 @@ function renderAll() {
   renderRegionSelector();
   renderRegionTabs();
   renderKpis();
+  renderManagementView();
   renderPlanTable();
 }
 
@@ -463,6 +464,80 @@ function renderPlanTable() {
   tbody.querySelectorAll("tr[data-id]").forEach(tr => {
     tr.addEventListener("click", () => openPlanManager(tr.dataset.id));
   });
+}
+
+function renderManagementView() {
+  const tbody = q("pa2MgmtRows");
+  const totalRow = q("pa2MgmtTotalRow");
+  if (!tbody || !totalRow) return;
+
+  const grouped = new Map();
+
+  state.pa2Plans.forEach(plan => {
+    const products = planProducts(plan);
+    products.forEach(product => {
+      const key = `${plan.regionId}::${product}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          regionId: plan.regionId,
+          product,
+          oemSet: new Set(),
+          forecast: 0,
+          actual: 0
+        });
+      }
+
+      const rec = grouped.get(key);
+      rec.oemSet.add((plan.oemName || "").toUpperCase());
+      rec.forecast += num(plan.annualForecastCr);
+      rec.actual += num(plan.annualActualCr);
+    });
+  });
+
+  const rows = Array.from(grouped.values()).sort((a, b) => {
+    const regionCmp = regionName(a.regionId).localeCompare(regionName(b.regionId));
+    if (regionCmp !== 0) return regionCmp;
+    return String(a.product || "").localeCompare(String(b.product || ""));
+  });
+
+  tbody.innerHTML = rows.map(r => {
+    const count = r.oemSet.size;
+    const status = forecastStatus(r.forecast, r.actual);
+    return `
+      <tr>
+        <td>${esc(regionName(r.regionId))}</td>
+        <td>${esc(r.product || "-")}</td>
+        <td>${esc(String(count))}</td>
+        <td>${esc(moneyCr(r.forecast))}</td>
+        <td>${esc(moneyCr(r.actual))}</td>
+        <td><span class="mgmt-status ${status.className}">${esc(status.label)}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  const totalCount = rows.reduce((acc, r) => acc + r.oemSet.size, 0);
+  const totalForecast = rows.reduce((acc, r) => acc + num(r.forecast), 0);
+  const totalActual = rows.reduce((acc, r) => acc + num(r.actual), 0);
+  const totalStatus = forecastStatus(totalForecast, totalActual);
+
+  totalRow.innerHTML = `
+    <th>Total</th>
+    <th>All Products</th>
+    <th>${esc(String(totalCount))}</th>
+    <th>${esc(moneyCr(totalForecast))}</th>
+    <th>${esc(moneyCr(totalActual))}</th>
+    <th><span class="mgmt-status ${totalStatus.className}">${esc(totalStatus.label)}</span></th>
+  `;
+}
+
+function forecastStatus(forecast, actual) {
+  const f = num(forecast);
+  const a = num(actual);
+  if (f <= 0) return { label: "No Plan", className: "status-noplan" };
+  const ratio = a / f;
+  if (ratio >= 1) return { label: "On Track", className: "status-good" };
+  if (ratio >= 0.75) return { label: "Watch", className: "status-watch" };
+  return { label: "At Risk", className: "status-risk" };
 }
 
 function openPlanManager(planId) {

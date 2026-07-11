@@ -23,6 +23,34 @@
 body {
   margin: 0;
   font-family: "Public Sans", "Segoe UI", sans-serif;
+
+.mgmt-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.mgmt-status.status-good {
+  background: #e6f6ec;
+  color: #0d6a38;
+}
+
+.mgmt-status.status-watch {
+  background: #fff5df;
+  color: #9a6400;
+}
+
+.mgmt-status.status-risk {
+  background: #fdeaea;
+  color: #a62828;
+}
+
+.mgmt-status.status-noplan {
+  background: #edf2fa;
+  color: #425b7a;
+}
   background:
     linear-gradient(145deg, rgba(10, 93, 168, 0.08), transparent 42%),
     radial-gradient(circle at 78% -6%, #ffffff 0%, transparent 35%),
