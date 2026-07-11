@@ -71,6 +71,7 @@ function bindEvents() {
   q("btnDwSaveProducts").addEventListener("click", saveProductRows);
   q("btnDwAddAccount").addEventListener("click", addKeyAccount);
   q("btnDwSaveEngineer").addEventListener("click", saveSalesEngineerMapping);
+  q("dwAccountSelect").addEventListener("change", onReuseAccountChange);
 
   const importBtn = q("btnDwImportData");
   const importInput = q("dwImportFileInput");
@@ -115,9 +116,72 @@ function renderDealersByRegion() {
 function renderAll() {
   syncSalesEngineerInput();
   renderContext();
+  renderReusableAccountOptions();
   renderProductRows();
   renderKeyAccounts();
   renderQuarterSummary();
+}
+
+function renderReusableAccountOptions() {
+  const select = q("dwAccountSelect");
+  if (!select) return;
+
+  const dealer = selectedDealer();
+  const region = selectedRegion();
+  const previous = select.value;
+
+  select.innerHTML = "";
+  select.appendChild(opt("", "Select saved account"));
+
+  if (!dealer || !region) return;
+
+  const unique = new Map();
+  state.accounts
+    .filter(a => a.regionId === region.id && a.dealerId === dealer.id)
+    .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))
+    .forEach(a => {
+      const key = `${(a.account || "").trim().toUpperCase()}::${a.product || "PA"}`;
+      if (!a.account || unique.has(key)) return;
+      unique.set(key, a);
+    });
+
+  Array.from(unique.values())
+    .sort((a, b) => String(a.account || "").localeCompare(String(b.account || "")))
+    .forEach(a => {
+      const value = `${a.account}|||${a.product || "PA"}`;
+      select.appendChild(opt(value, `${a.account} (${productLabel(a.product || "PA")})`));
+    });
+
+  if (Array.from(select.options).some(o => o.value === previous)) {
+    select.value = previous;
+  }
+}
+
+function onReuseAccountChange() {
+  const select = q("dwAccountSelect");
+  if (!select || !select.value) return;
+
+  const [accountName, product] = select.value.split("|||");
+  q("dwAccountName").value = accountName || "";
+  if (q("dwAccountProduct") && product) q("dwAccountProduct").value = product;
+
+  const dealer = selectedDealer();
+  const region = selectedRegion();
+  if (!dealer || !region || !accountName) return;
+
+  const latest = state.accounts
+    .filter(a =>
+      a.regionId === region.id &&
+      a.dealerId === dealer.id &&
+      String(a.account || "").trim().toUpperCase() === accountName.trim().toUpperCase() &&
+      (a.product || "PA") === (product || "PA")
+    )
+    .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))[0];
+
+  if (!latest) return;
+  q("dwAccountPotential").value = num(latest.potential);
+  q("dwAccountForecast").value = num(latest.forecast);
+  q("dwAccountStage").value = latest.stage || "Prospect";
 }
 
 function syncSalesEngineerInput() {
@@ -238,7 +302,9 @@ function addKeyAccount() {
   const dealer = selectedDealer();
   const region = selectedRegion();
   const month = q("dwMonth").value;
-  const account = q("dwAccountName").value.trim();
+  const selectedValue = q("dwAccountSelect") ? q("dwAccountSelect").value : "";
+  const selectedName = selectedValue ? String(selectedValue.split("|||")[0] || "").trim() : "";
+  const account = q("dwAccountName").value.trim() || selectedName;
   const product = q("dwAccountProduct") ? q("dwAccountProduct").value : "PA";
   if (!dealer || !region || !month || !account) return;
 
@@ -265,8 +331,10 @@ function addKeyAccount() {
   q("dwAccountName").value = "";
   q("dwAccountPotential").value = "";
   q("dwAccountForecast").value = "";
+  if (q("dwAccountSelect")) q("dwAccountSelect").value = "";
   if (q("dwAccountProduct")) q("dwAccountProduct").value = "PA";
   persist();
+  renderReusableAccountOptions();
   renderKeyAccounts();
 }
 
