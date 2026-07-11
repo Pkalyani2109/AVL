@@ -153,7 +153,7 @@ function esc(value) {
 
 function expandedRows() {
   const rows = [];
-  state.pa2Plans.forEach(plan => {
+  state.pa2Plans.filter(isProspectPlan).forEach(plan => {
     const products = planProducts(plan);
     products.forEach(product => {
       rows.push({
@@ -169,6 +169,14 @@ function expandedRows() {
     });
   });
   return rows;
+}
+
+function isProspectPlan(plan) {
+  if (!plan) return false;
+  const leadStatus = String(plan.leadStatus || "").toLowerCase();
+  const affinity = String(plan.affinity || "Yes").toLowerCase();
+  const reason = String(plan.rejectionReason || "").trim();
+  return !(leadStatus === "rejected" || affinity === "no" || !!reason);
 }
 
 function filteredRows() {

@@ -223,6 +223,18 @@ function migratePa2Plans() {
       next.actionPlan = `Drive ${next.product || "product"} conversion with account-wise monthly milestones.`;
       changed = true;
     }
+    if (!next.affinity) {
+      next.affinity = "Yes";
+      changed = true;
+    }
+    if (next.rejectionReason == null) {
+      next.rejectionReason = "";
+      changed = true;
+    }
+    if (!next.leadStatus) {
+      next.leadStatus = (String(next.affinity || "").toLowerCase() === "no" || String(next.rejectionReason || "").trim()) ? "Rejected" : "Prospect";
+      changed = true;
+    }
 
     return next;
   });
@@ -581,6 +593,7 @@ function renderAll() {
   renderAccountTypeSnapshot();
   renderManagementView();
   renderPlanTable();
+  renderRejectedTable();
 }
 
 function renderRegionSelector() {
@@ -803,11 +816,11 @@ function renderAccountTypeSnapshot() {
 }
 
 function renderPlanTable() {
-  const rows = filteredAndSortedReviewPlans(filteredPlans());
+  const rows = filteredAndSortedReviewPlans(filteredPlans().filter(isProspectPlan));
   const tbody = q("pa2PlanRows");
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="21" class="muted">No OEM plans match current review filters.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="24" class="muted">No OEM plans match current review filters.</td></tr>`;
     return;
   }
 
@@ -836,6 +849,9 @@ function renderPlanTable() {
         <td>${esc(p.segments || "-")}</td>
         <td>${esc(p.strategy || "-")}</td>
         <td>${esc(p.owner || "-")}</td>
+        <td>${esc(p.affinity || "Yes")}</td>
+        <td>${esc(p.rejectionReason || "-")}</td>
+        <td><button class="btn ghost" data-reject-plan-id="${esc(p.id)}" type="button">Reject</button></td>
       </tr>
     `;
   }).join("");
@@ -843,6 +859,87 @@ function renderPlanTable() {
   tbody.querySelectorAll("tr[data-id]").forEach(tr => {
     tr.addEventListener("click", () => openPlanManager(tr.dataset.id));
   });
+
+  tbody.querySelectorAll("button[data-reject-plan-id]").forEach(btn => {
+    btn.addEventListener("click", evt => {
+      evt.stopPropagation();
+      markPlanRejected(btn.getAttribute("data-reject-plan-id"));
+    });
+  });
+}
+
+function renderRejectedTable() {
+  const tbody = q("pa2RejectedRows");
+  if (!tbody) return;
+
+  const rows = filteredPlans().filter(isRejectedPlan);
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="muted">No rejected contacts.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map((p, idx) => `
+    <tr>
+      <td>${idx + 1}</td>
+      <td>${esc(regionName(p.regionId))}</td>
+      <td>${esc(p.oemName || "-")}</td>
+      <td>${esc(planProducts(p).join(", ") || "-")}</td>
+      <td>${esc(p.month || "-")}</td>
+      <td>${esc(p.affinity || "No")}</td>
+      <td>${esc(p.rejectionReason || "-")}</td>
+      <td><button class="btn secondary" data-prospect-plan-id="${esc(p.id)}" type="button">Move to Prospect</button></td>
+    </tr>
+  `).join("");
+
+  tbody.querySelectorAll("button[data-prospect-plan-id]").forEach(btn => {
+    btn.addEventListener("click", () => markPlanProspect(btn.getAttribute("data-prospect-plan-id")));
+  });
+}
+
+function isRejectedPlan(plan) {
+  if (!plan) return false;
+  const leadStatus = String(plan.leadStatus || "").toLowerCase();
+  const affinity = String(plan.affinity || "Yes").toLowerCase();
+  const reason = String(plan.rejectionReason || "").trim();
+  return leadStatus === "rejected" || affinity === "no" || !!reason;
+}
+
+function isProspectPlan(plan) {
+  return !isRejectedPlan(plan);
+}
+
+function markPlanRejected(planId) {
+  if (!planId) return;
+  const reason = window.prompt("Enter rejection reason for this OEM/contact:", "No affinity / Not in scope");
+  if (reason == null) return;
+
+  const trimmed = String(reason).trim();
+  if (!trimmed) {
+    setStatus("Rejection reason is required.", false);
+    return;
+  }
+
+  state.pa2Plans = state.pa2Plans.map(p => p.id === planId
+    ? { ...p, affinity: "No", leadStatus: "Rejected", rejectionReason: trimmed, updatedAt: new Date().toISOString() }
+    : p
+  );
+
+  persist();
+  renderAll();
+  setStatus("OEM/contact moved to Rejected Contacts.", true);
+}
+
+function markPlanProspect(planId) {
+  if (!planId) return;
+
+  state.pa2Plans = state.pa2Plans.map(p => p.id === planId
+    ? { ...p, affinity: "Yes", leadStatus: "Prospect", rejectionReason: "", updatedAt: new Date().toISOString() }
+    : p
+  );
+
+  persist();
+  renderAll();
+  setStatus("Contact moved back to Prospect.", true);
 }
 
 function filteredAndSortedReviewPlans(baseRows) {
