@@ -231,6 +231,47 @@
       color: var(--dark-blue);
     }
 
+    .ordering-panel {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid #b9d7ea;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f7fcff 0%, #eef7fd 100%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+    }
+
+    .ordering-panel .section-title {
+      margin: 0 0 6px;
+    }
+
+    .ordering-caption {
+      margin: 0 0 12px;
+      color: #4b5563;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .eqta-options {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px dashed #bfd5e4;
+      border-radius: 10px;
+      background: #fbfdff;
+    }
+
+    .eqta-options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .eqta-options-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .result-box {
       background: var(--light-blue);
       border: 1px solid #bae6fd;
@@ -282,6 +323,35 @@
       font-size: 12px;
       line-height: 1.45;
       font-weight: 700;
+    }
+
+    .actuator-sizing-box {
+      background: linear-gradient(135deg, #fffdf4 0%, #f4fbff 100%);
+      border: 1px solid #d8e6aa;
+    }
+
+    .actuator-sizing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+      margin-top: 6px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .actuator-sizing-grid strong {
+      color: #1f2937;
+    }
+
+    .fos-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      border: 1px solid #c7d2fe;
+      color: #1e3a8a;
+      background: #e0e7ff;
     }
 
     .part-number {
@@ -545,8 +615,25 @@
 
             </div>
 
-            <div class="section-title">Ordering Code Fields</div>
-            <div class="form-grid" id="fieldHolder"></div>
+            <section class="ordering-panel" aria-label="Ordering code field group">
+              <div class="section-title">Ordering Code Fields</div>
+              <p class="ordering-caption">These selections directly build the final ordering code and part number.</p>
+              <div class="form-grid" id="fieldHolder"></div>
+
+              <div id="eqtaOptionSection" class="eqta-options" style="display:none;">
+                <div class="section-title" style="margin:0 0 8px; font-size:14px;">EQTA Options</div>
+                <div class="eqta-options-grid">
+                  <div>
+                    <label for="eqtaVoltage">Voltage</label>
+                    <select id="eqtaVoltage" onchange="generatePartNumber()"></select>
+                  </div>
+                  <div>
+                    <label for="eqtaHandwheel">Handwheel</label>
+                    <select id="eqtaHandwheel" onchange="generatePartNumber()"></select>
+                  </div>
+                </div>
+              </div>
+            </section>
 
             <div class="button-row">
               <button onclick="generatePartNumber()">Generate</button>
@@ -555,10 +642,6 @@
             </div>
 
             <div id="copyStatus" class="copy-ok"></div>
-
-            <p class="helper">
-              QTA torque is shown at 4 bar. Ball Valve and Butterfly Valve maximum output torque options are catalogue reference values and are not part of the ordering code.
-            </p>
           </div>
         </section>
 
@@ -612,6 +695,11 @@
           <div class="result-box">
             <small>Description</small>
             <div id="fullDescription" class="description">-</div>
+          </div>
+
+          <div id="butterflyActuatorSizingSection" class="result-box actuator-sizing-box" style="display:none;">
+            <small>Valve Actuator Sizing</small>
+            <div id="butterflyActuatorSizing" class="description">Actuator model recommendation is shown for actuation type 2, 3 and 4.</div>
           </div>
 
           <div class="result-box chemical-highlight">
@@ -748,6 +836,54 @@
       { size: "400", m: "46", n: "50", z: "940", i: "Ø165", j: "Ø254", port: "G1/2''", flange: "F16/F25" }
     ];
 
+    const BUTTERFLY_ACTUATOR_SIZING = {
+      "69": { valveSize: "1 1/2 inch", valveTorque: 12, qtaDa: "DA-052", qtaSr: "SR-075", srSpring: "09", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+      "76": { valveSize: "2 inch", valveTorque: 15, qtaDa: "DA-052", qtaSr: "SR-075", srSpring: "11", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+      "77": { valveSize: "2 1/2 inch", valveTorque: 22, qtaDa: "DA-063", qtaSr: "SR-083", srSpring: "11", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+      "78": { valveSize: "3 inch", valveTorque: 23, qtaDa: "DA-063", qtaSr: "SR-083", srSpring: "11", eqtaModel: "EQTA005", eqtaPartNumber: "JEQTA-N-005-1-W", eqtaTorqueNm: 50, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 50 Nm - 110V AC" },
+      "80": { valveSize: "4 inch", valveTorque: 35, qtaDa: "DA-075", qtaSr: "SR-092", srSpring: "12", eqtaModel: "EQTA005", eqtaPartNumber: "JEQTA-N-005-1-W", eqtaTorqueNm: 50, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 50 Nm - 110V AC" },
+      "82": { valveSize: "5 inch", valveTorque: 55, qtaDa: "DA-092", qtaSr: "SR-125", srSpring: "08", eqtaModel: "EQTA008", eqtaPartNumber: "JEQTA-N-008-1-W", eqtaTorqueNm: 80, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 80 Nm - 110V AC" },
+      "84": { valveSize: "6 inch", valveTorque: 75, qtaDa: "DA-092", qtaSr: "SR-125", srSpring: "11", eqtaModel: "EQTA015", eqtaPartNumber: "JEQTA-N-015-1-W", eqtaTorqueNm: 150, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 150 Nm - 110V AC" },
+      "86": { valveSize: "8 inch", valveTorque: 155, qtaDa: "DA-125", qtaSr: "SR-160", srSpring: "09", eqtaModel: "EQTA040", eqtaPartNumber: "JEQTA-N-040-1-W", eqtaTorqueNm: 400, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 400 Nm - 110V AC" },
+      "88": { valveSize: "10 inch", valveTorque: 200, qtaDa: "DA-140", qtaSr: "SR-190", srSpring: "08", eqtaModel: "EQTA040", eqtaPartNumber: "JEQTA-N-040-1-W", eqtaTorqueNm: 400, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 400 Nm - 110V AC" },
+      "90": { valveSize: "12 inch", valveTorque: 300, qtaDa: "DA-160", qtaSr: "SR-190", srSpring: "12", eqtaModel: "EQTA060", eqtaPartNumber: "JEQTA-N-060-1-W", eqtaTorqueNm: 600, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 600 Nm - 110V AC" }
+    };
+
+    const BALL_ACTUATOR_SIZING = {
+      "1": {
+        "63": { valveSize: "1/2 inch", valveTorque: 4, requiredTorque: 5.2, qtaDa: "DA-032", qtaSr: "SR-052", srSpring: "08", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "64": { valveSize: "3/4 inch", valveTorque: 7, requiredTorque: 9.1, qtaDa: "DA-040", qtaSr: "SR-063", srSpring: "08", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "65": { valveSize: "1 inch", valveTorque: 9, requiredTorque: 11.7, qtaDa: "DA-052", qtaSr: "SR-063", srSpring: "10", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "67": { valveSize: "1 1/4 inch", valveTorque: 15, requiredTorque: 19.5, qtaDa: "DA-052", qtaSr: "SR-075", srSpring: "11", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "69": { valveSize: "1 1/2 inch", valveTorque: 21, requiredTorque: 27.3, qtaDa: "DA-063", qtaSr: "SR-083", srSpring: "11", eqtaModel: "EQTA005", eqtaPartNumber: "JEQTA-N-005-1-W", eqtaTorqueNm: 50, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 50 Nm - 110V AC" },
+        "76": { valveSize: "2 inch", valveTorque: 35, requiredTorque: 45.5, qtaDa: "DA-075", qtaSr: "SR-092", srSpring: "12", eqtaModel: "EQTA008", eqtaPartNumber: "JEQTA-N-008-1-W", eqtaTorqueNm: 80, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 80 Nm - 110V AC" },
+        "77": { valveSize: "2 1/2 inch", valveTorque: 67, requiredTorque: 87.1, qtaDa: "DA-092", qtaSr: "SR-125", srSpring: "10", eqtaModel: "EQTA010", eqtaPartNumber: "JEQTA-N-010-1-W", eqtaTorqueNm: 100, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 100 Nm - 110V AC" },
+        "78": { valveSize: "3 inch", valveTorque: 93, requiredTorque: 120.9, qtaDa: "DA-105", qtaSr: "SR-140", srSpring: "08", eqtaModel: "EQTA015", eqtaPartNumber: "JEQTA-N-015-1-W", eqtaTorqueNm: 150, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 150 Nm - 110V AC" },
+        "80": { valveSize: "4 inch", valveTorque: 155, requiredTorque: 201.5, qtaDa: "DA-125", qtaSr: "SR-160", srSpring: "09", eqtaModel: "EQTA040", eqtaPartNumber: "JEQTA-N-040-1-W", eqtaTorqueNm: 400, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 400 Nm - 110V AC" }
+      },
+      "2": {
+        "63": { valveSize: "1/2 inch", valveTorque: 5, requiredTorque: 6.5, qtaDa: "DA-032", qtaSr: "SR-052", srSpring: "09", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "64": { valveSize: "3/4 inch", valveTorque: 8, requiredTorque: 10.4, qtaDa: "DA-040", qtaSr: "SR-063", srSpring: "09", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "65": { valveSize: "1 inch", valveTorque: 11.5, requiredTorque: 14.95, qtaDa: "DA-052", qtaSr: "SR-075", srSpring: "09", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "67": { valveSize: "1 1/4 inch", valveTorque: 21, requiredTorque: 27.3, qtaDa: "DA-063", qtaSr: "SR-083", srSpring: "10", eqtaModel: "EQTA003", eqtaPartNumber: "JEQTA-N-003-1-W", eqtaTorqueNm: 30, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 30 Nm - 110V AC" },
+        "69": { valveSize: "1 1/2 inch", valveTorque: 25, requiredTorque: 32.5, qtaDa: "DA-075", qtaSr: "SR-083", srSpring: "12", eqtaModel: "EQTA005", eqtaPartNumber: "JEQTA-N-005-1-W", eqtaTorqueNm: 50, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 50 Nm - 110V AC" },
+        "76": { valveSize: "2 inch", valveTorque: 55, requiredTorque: 71.5, qtaDa: "DA-092", qtaSr: "SR-125", srSpring: "08", eqtaModel: "EQTA010", eqtaPartNumber: "JEQTA-N-010-1-W", eqtaTorqueNm: 100, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 100 Nm - 110V AC" },
+        "77": { valveSize: "2 1/2 inch", valveTorque: 96, requiredTorque: 124.8, qtaDa: "DA-105", qtaSr: "SR-140", srSpring: "09", eqtaModel: "EQTA015", eqtaPartNumber: "JEQTA-N-015-1-W", eqtaTorqueNm: 150, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 150 Nm - 110V AC" },
+        "78": { valveSize: "3 inch", valveTorque: 120, requiredTorque: 156, qtaDa: "DA-125", qtaSr: "SR-160", srSpring: "07", eqtaModel: "EQTA020", eqtaPartNumber: "JEQTA-N-020-1-W", eqtaTorqueNm: 200, eqtaDescription: "Electric Quarter Turn Actuator On/Off Type - 200 Nm - 110V AC" }
+      }
+    };
+
+    const EQTA_VOLTAGE_OPTIONS = [
+      { code: "230VAC", label: "230 V AC" },
+      { code: "110VAC", label: "110 V AC" },
+      { code: "24VDC", label: "24 V DC" }
+    ];
+
+    const EQTA_HANDWHEEL_OPTIONS = [
+      { code: "WITHOUT_HW", label: "Without handwheel" },
+      { code: "WITH_HW", label: "With handwheel" }
+    ];
+
     const ACCESSORY_DATA = {
       "positionIndicator": {
         label: "Position Indicator",
@@ -841,7 +977,7 @@
             { code: "P", label: "PTFE" }, { code: "E", label: "PEEK" }, { code: "R", label: "RPTFE" }
           ]},
           { key: "actuation", label: "Actuation Type", options: [
-            { code: "1", label: "Manual" }, { code: "2", label: "Pneumatic - Single Acting" },
+            { code: "1", label: "Manual" }, { code: "2", label: "Pneumatic - Single Acting Fail Close (FC)" },
             { code: "3", label: "Pneumatic - Double Acting" }, { code: "4", label: "Electrical - ON/OFF" }
           ]}
         ],
@@ -849,6 +985,23 @@
           "1": ["63", "64", "65", "69", "76", "77", "78", "80"],
           "2": ["63", "64", "65", "69", "76", "77", "78", "80"],
           "3": ["63", "64", "65", "69", "76"]
+        },
+        allowedConnectionByConstruction: {
+          "1": ["1"],
+          "2": ["2", "3"],
+          "3": ["1"]
+        },
+        allowedPortByConstructionAndConnection: {
+          "1": {
+            "1": ["63", "64", "65", "69", "76", "77", "78", "80"]
+          },
+          "2": {
+            "2": ["63", "64", "65", "67", "69", "76"],
+            "3": ["63", "64", "65", "67", "69", "76"]
+          },
+          "3": {
+            "1": ["63", "64", "65", "69", "76", "77", "78", "80"]
+          }
         }
       },
 
@@ -866,7 +1019,8 @@
             { code: "69", label: "1 1/2 inch", dn: "DN40" }, { code: "76", label: "2 inch", dn: "DN50" },
             { code: "77", label: "2 1/2 inch", dn: "DN65" }, { code: "78", label: "3 inch", dn: "DN80" },
             { code: "80", label: "4 inch", dn: "DN100" }, { code: "82", label: "5 inch", dn: "DN125" },
-            { code: "84", label: "6 inch", dn: "DN150" }, { code: "86", label: "8 inch", dn: "DN200" }
+            { code: "84", label: "6 inch", dn: "DN150" }, { code: "86", label: "8 inch", dn: "DN200" },
+            { code: "88", label: "10 inch", dn: "DN250" }, { code: "90", label: "12 inch", dn: "DN300" }
           ]},
           { key: "pressure", label: "Pressure Rating", options: [
             { code: "1", label: "PN10" }, { code: "2", label: "PN16" }
@@ -880,7 +1034,7 @@
             { code: "P", label: "PTFE" }, { code: "E", label: "EPDM" }, { code: "N", label: "NBR" }
           ]},
           { key: "actuation", label: "Actuation Type", options: [
-            { code: "1", label: "Manual" }, { code: "2", label: "Pneumatic - Single Acting" },
+            { code: "1", label: "Manual" }, { code: "2", label: "Pneumatic - Single Acting Fail Close (FC)" },
             { code: "3", label: "Pneumatic - Double Acting" }, { code: "4", label: "Electrical - ON/OFF" }
           ]}
         ]
@@ -1078,23 +1232,118 @@
 
     function handleDependencies() {
       const productKey = document.getElementById("productType").value;
-      if (productKey === "ball") filterBallPorts();
+      if (productKey === "ball") filterBallOptions();
+      if (productKey === "pulse") filterPulsePorts();
       if (productKey === "qta") filterQtaOptions();
       if (productKey === "qtaAccessory") rebuildAccessoryModelOptions();
+      toggleEqtaOptions();
     }
 
-    function filterBallPorts() {
+    function populateEqtaSelect(selectId, options, defaultCode) {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+
+      if (!select.options.length) {
+        options.forEach(optionData => {
+          const option = document.createElement("option");
+          option.value = optionData.code;
+          option.textContent = optionData.label;
+          select.appendChild(option);
+        });
+      }
+
+      if (!select.value) select.value = defaultCode;
+      if (!Array.from(select.options).some(option => option.value === select.value)) {
+        select.value = defaultCode;
+      }
+    }
+
+    function getEqtaSelections() {
+      const voltageSelect = document.getElementById("eqtaVoltage");
+      const handwheelSelect = document.getElementById("eqtaHandwheel");
+
+      populateEqtaSelect("eqtaVoltage", EQTA_VOLTAGE_OPTIONS, "230VAC");
+      populateEqtaSelect("eqtaHandwheel", EQTA_HANDWHEEL_OPTIONS, "WITHOUT_HW");
+
+      const voltageOption = voltageSelect && voltageSelect.options[voltageSelect.selectedIndex]
+        ? voltageSelect.options[voltageSelect.selectedIndex]
+        : { value: "230VAC", text: "230 V AC" };
+      const handwheelOption = handwheelSelect && handwheelSelect.options[handwheelSelect.selectedIndex]
+        ? handwheelSelect.options[handwheelSelect.selectedIndex]
+        : { value: "WITHOUT_HW", text: "Without handwheel" };
+
+      return {
+        voltageCode: voltageOption.value,
+        voltageLabel: voltageOption.text,
+        phaseLabel: /AC$/i.test(String(voltageOption.text || "")) ? "1 Phase" : "",
+        handwheelCode: handwheelOption.value,
+        handwheelLabel: handwheelOption.text
+      };
+    }
+
+    function toggleEqtaOptions() {
+      const section = document.getElementById("eqtaOptionSection");
+      const productKey = document.getElementById("productType").value;
+      const actuationSelect = document.getElementById("field_actuation");
+      if (!section) return;
+
+      populateEqtaSelect("eqtaVoltage", EQTA_VOLTAGE_OPTIONS, "230VAC");
+      populateEqtaSelect("eqtaHandwheel", EQTA_HANDWHEEL_OPTIONS, "WITHOUT_HW");
+
+      const show = (productKey === "butterfly" || productKey === "ball") && actuationSelect && actuationSelect.value === "4";
+      section.style.display = show ? "block" : "none";
+    }
+
+    function filterBallOptions() {
+      const constructionSelect = document.getElementById("field_construction");
       const connectionSelect = document.getElementById("field_connection");
       const portSelect = document.getElementById("field_port");
-      if (!connectionSelect || !portSelect) return;
+      if (!constructionSelect || !connectionSelect || !portSelect) return;
 
-      const allowedPorts = MASTER.ball.allowedPortByConnection[connectionSelect.value];
+      const allowedConnections = MASTER.ball.allowedConnectionByConstruction[constructionSelect.value] || [];
+      Array.from(connectionSelect.options).forEach(option => {
+        const allowed = allowedConnections.includes(option.value);
+        option.disabled = !allowed;
+        option.hidden = !allowed;
+      });
+      if (!allowedConnections.includes(connectionSelect.value)) connectionSelect.value = allowedConnections[0] || "";
+
+      const byConstruction = MASTER.ball.allowedPortByConstructionAndConnection[constructionSelect.value] || {};
+      const allowedPorts = byConstruction[connectionSelect.value] || [];
+
       Array.from(portSelect.options).forEach(option => {
         const allowed = allowedPorts.includes(option.value);
         option.disabled = !allowed;
         option.hidden = !allowed;
       });
       if (!allowedPorts.includes(portSelect.value)) portSelect.value = allowedPorts[0];
+    }
+
+    function filterPulsePorts() {
+      const bodyTypeSelect = document.getElementById("field_bodyType");
+      const portSelect = document.getElementById("field_port");
+      if (!bodyTypeSelect || !portSelect) return;
+
+      const allowedPortByBodyType = {
+        "01": ["05", "06", "08", "10", "12", "14"],
+        "02": ["06", "08", "10", "12", "14", "18"],
+        "03": ["05", "06", "08"],
+        "04": ["06", "10", "12"],
+        "05": ["06", "08"],
+        "06": ["05", "06", "08", "10", "12", "14"],
+        "07": ["06", "08", "10", "12", "14", "18"],
+        "08": ["05", "06", "08"],
+        "09": ["06", "08"],
+        "10": ["06", "08"]
+      };
+
+      const allowedPorts = allowedPortByBodyType[bodyTypeSelect.value] || [];
+      Array.from(portSelect.options).forEach(option => {
+        const allowed = allowedPorts.includes(option.value);
+        option.disabled = !allowed;
+        option.hidden = !allowed;
+      });
+      if (!allowedPorts.includes(portSelect.value)) portSelect.value = allowedPorts[0] || "";
     }
 
     function filterQtaOptions() {
@@ -1167,15 +1416,21 @@
       const errors = [];
 
       if (productKey === "ball") {
-        const allowedPorts = MASTER.ball.allowedPortByConnection[values.connection] || [];
-        if (!allowedPorts.includes(values.port)) errors.push("Selected Ball Valve port size is not available for this connection.");
+        const allowedConnections = MASTER.ball.allowedConnectionByConstruction[values.construction] || [];
+        if (!allowedConnections.includes(values.connection)) errors.push("Selected Ball Valve connection is not available for this construction type.");
+
+        const allowedPorts = (MASTER.ball.allowedPortByConstructionAndConnection[values.construction] || {})[values.connection] || [];
+        if (!allowedPorts.includes(values.port)) errors.push("Selected Ball Valve port size is not available for this construction and connection combination.");
+
         if (values.construction === "3") notes.push("For 3 Way Ball Valve, confirm L-port or T-port requirement.");
-        if (values.seat === "E" || values.seat === "R") notes.push("PEEK / RPTFE seat to be confirmed based on media and temperature.");
+        if (values.seat === "E") notes.push("PEEK seat is available on request.");
+        if (["3", "4"].includes(values.material)) notes.push("WCB body MOC is available on request.");
+        if (values.seat === "R") notes.push("RPTFE seat to be confirmed based on media and temperature.");
       }
 
       if (productKey === "butterfly") {
         if (values.seat === "E" || values.seat === "N") notes.push("EPDM and NBR seat are based on request; check media compatibility.");
-        if (values.bodyDesign === "2") notes.push("Double Offset Butterfly Valve to be confirmed for size, pressure and application.");
+        if (values.bodyDesign === "2") notes.push("Double Offset Butterfly Valve is available on request.");
       }
 
       if (productKey === "qta") {
@@ -1194,6 +1449,21 @@
       }
 
       if (productKey === "pulse") {
+        const allowedPortByBodyType = {
+          "01": ["05", "06", "08", "10", "12", "14"],
+          "02": ["06", "08", "10", "12", "14", "18"],
+          "03": ["05", "06", "08"],
+          "04": ["06", "10", "12"],
+          "05": ["06", "08"],
+          "06": ["05", "06", "08", "10", "12", "14"],
+          "07": ["06", "08", "10", "12", "14", "18"],
+          "08": ["05", "06", "08"],
+          "09": ["06", "08"],
+          "10": ["06", "08"]
+        };
+
+        const allowedPorts = allowedPortByBodyType[values.bodyType] || [];
+        if (!allowedPorts.includes(values.port)) errors.push("Selected Pulse Valve port size is not available for this body type.");
         if (["06","07","08","09","10"].includes(values.bodyType)) notes.push("Pilot type selected; confirm whether voltage code is required in final ERP release.");
         if (values.seal === "E" || values.seal === "V") notes.push("EPDM / FKM seal to be confirmed against temperature and media.");
       }
@@ -1205,7 +1475,7 @@
       }
 
       if ((productKey === "ball" || productKey === "butterfly") && values.actuation === "2") {
-        notes.push("Pneumatic Single Acting requires fail-open / fail-close confirmation.");
+        notes.push("Single Acting is standard as Fail Close (FC). For Fail Open execution, contact factory.");
       }
       if ((productKey === "ball" || productKey === "butterfly") && values.actuation === "4") {
         notes.push("Electrical ON/OFF requires supply voltage and actuator torque confirmation.");
@@ -1234,8 +1504,30 @@
 
         if (productKey === "ball") {
           briefDescription = `${product.model.label}, ${selectedOption(productKey, "construction", values.construction).label}, ${selectedOption(productKey, "connection", values.connection).label}, ${port.label} / ${port.dn}, ${pressure.label}, ${selectedOption(productKey, "material", values.material).label}, ${seat.label} Seat, ${actuation.label}`;
+
+          const sizing = getBallActuatorSizing(values);
+          if (sizing) {
+            briefDescription += `, ${sizing.model}`;
+          }
+
+          if (values.actuation === "4") {
+            const eqta = getEqtaSelections();
+            const phaseText = eqta.phaseLabel ? `, ${eqta.phaseLabel}` : "";
+            briefDescription += `, ${eqta.voltageLabel}${phaseText}, ${eqta.handwheelLabel}`;
+          }
         } else {
           briefDescription = `${product.model.label}, ${selectedOption(productKey, "bodyDesign", values.bodyDesign).label}, ${selectedOption(productKey, "connection", values.connection).label}, ${port.label} / ${port.dn}, ${pressure.label}, ${selectedOption(productKey, "material", values.material).label}, ${seat.label} Seat, ${actuation.label}`;
+
+          const sizing = getButterflyActuatorSizing(values);
+          if (sizing) {
+            briefDescription += `, ${sizing.model}`;
+          }
+
+          if (values.actuation === "4") {
+            const eqta = getEqtaSelections();
+            const phaseText = eqta.phaseLabel ? `, ${eqta.phaseLabel}` : "";
+            briefDescription += `, ${eqta.voltageLabel}${phaseText}, ${eqta.handwheelLabel}`;
+          }
         }
         fullDescription = `Janatics ${briefDescription}.`;
       }
@@ -1308,6 +1600,7 @@
       document.getElementById("fullDescription").textContent = fullDescription;
 
       renderQtaDimensions(productKey, values);
+      renderValveActuatorSizing(productKey, values);
       renderChemicalSuggestion(productKey, values);
 
       const statusBox = document.getElementById("statusBox");
@@ -1514,6 +1807,208 @@
       return { available: false, text: "Output torque at 4 bar: Not listed for selected spring quantity" };
     }
 
+    function formatNm(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return "-";
+      const rounded = Math.round(numeric * 10) / 10;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+    }
+
+    function formatFos(value) {
+      if (!Number.isFinite(value)) return "-";
+      return value.toFixed(2);
+    }
+
+    function actuatorSizeCode(modelCode) {
+      const match = String(modelCode || "").match(/(\d{3})$/);
+      return match ? match[1] : "";
+    }
+
+    function getSingleActingSizingData(row, valveTorque) {
+      const size = actuatorSizeCode(row.qtaSr);
+      const srMap = QTA_SR_TORQUE_4BAR[size] || {};
+      let usedSpring = row.srSpring;
+      let srRow = srMap[usedSpring] || null;
+
+      if (!srRow) {
+        const availableSprings = Object.keys(srMap)
+          .map(key => ({ key, numeric: Number(key) }))
+          .filter(item => Number.isFinite(item.numeric))
+          .sort((a, b) => a.numeric - b.numeric);
+
+        if (!availableSprings.length) return null;
+
+        const requested = Number(row.srSpring);
+        const nearest = availableSprings.reduce((best, current) => {
+          if (!best) return current;
+          return Math.abs(current.numeric - requested) < Math.abs(best.numeric - requested) ? current : best;
+        }, null);
+
+        usedSpring = nearest.key;
+        srRow = srMap[usedSpring] || null;
+      }
+
+      if (!srRow) return null;
+      const star5 = srRow[0] * 1.25;
+      const end5 = srRow[1] * 1.25;
+      const governing = Math.min(star5, end5);
+      const fos = governing / valveTorque;
+      const springNote = usedSpring === row.srSpring
+        ? `${usedSpring} SPRING`
+        : `${row.srSpring} SPRING requested; ${usedSpring} SPRING used for torque interpolation`;
+
+      return { star5, end5, governing, fos, springNote };
+    }
+
+    function getBallActuatorSizing(values) {
+      const row = (BALL_ACTUATOR_SIZING[values.pressure] || {})[values.port];
+      if (!row) return null;
+
+      const valveTorque = Number(row.valveTorque);
+      const requiredTorque = Number(row.requiredTorque);
+      if (!Number.isFinite(valveTorque) || valveTorque <= 0) return null;
+
+      if (values.actuation === "3") {
+        const size = actuatorSizeCode(row.qtaDa);
+        const torqueAt4Bar = Number(QTA_DA_TORQUE_4BAR[size]);
+        const torqueAt5Bar = torqueAt4Bar * 1.25;
+        const fos = torqueAt5Bar / requiredTorque;
+        return {
+          actuationLabel: "Pneumatic - Double Acting",
+          productLabel: "Ball Valve",
+          model: row.qtaDa,
+          valveSize: row.valveSize,
+          valveTorque,
+          torqueText: `Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm (from 4 bar catalogue torque x 1.25)`,
+          fos,
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm, Required torque (x1.3): ${formatNm(requiredTorque)} Nm`
+        };
+      }
+
+      if (values.actuation === "2") {
+        const sa = getSingleActingSizingData(row, requiredTorque);
+        if (!sa) return null;
+        return {
+          actuationLabel: "Pneumatic - Single Acting",
+          productLabel: "Ball Valve",
+          model: `${row.qtaSr} / ${sa.springNote}`,
+          valveSize: row.valveSize,
+          valveTorque,
+          torqueText: `Output Torque @ 5 bar: Start ${formatNm(sa.star5)} Nm / End ${formatNm(sa.end5)} Nm`,
+          fos: sa.fos,
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm, Required torque (x1.3): ${formatNm(requiredTorque)} Nm`
+        };
+      }
+
+      if (values.actuation === "4") {
+        const eqta = getEqtaSelections();
+        const actuatorTorque = Number(row.eqtaTorqueNm);
+        const fos = actuatorTorque / requiredTorque;
+        const phaseText = eqta.phaseLabel ? ` | ${eqta.phaseLabel}` : "";
+        return {
+          actuationLabel: "Electrical - ON/OFF",
+          productLabel: "Ball Valve",
+          model: row.eqtaModel,
+          valveSize: row.valveSize,
+          valveTorque,
+          torqueText: `Output Torque basis: ${formatNm(actuatorTorque)} Nm (electric actuator rated torque)`,
+          fos,
+          meta: `${row.eqtaPartNumber} | ${row.eqtaDescription} | ${eqta.voltageLabel}${phaseText} | ${eqta.handwheelLabel} | Required torque (x1.3): ${formatNm(requiredTorque)} Nm`
+        };
+      }
+
+      return null;
+    }
+
+    function getButterflyActuatorSizing(values) {
+      const row = BUTTERFLY_ACTUATOR_SIZING[values.port];
+      if (!row) return null;
+
+      const valveTorque = Number(row.valveTorque);
+      if (!Number.isFinite(valveTorque) || valveTorque <= 0) return null;
+
+      if (values.actuation === "3") {
+        const size = actuatorSizeCode(row.qtaDa);
+        const torqueAt4Bar = Number(QTA_DA_TORQUE_4BAR[size]);
+        const torqueAt5Bar = torqueAt4Bar * 1.25;
+        const fos = torqueAt5Bar / valveTorque;
+        return {
+          actuationLabel: "Pneumatic - Double Acting",
+          model: row.qtaDa,
+          valveSize: row.valveSize,
+          valveTorque,
+          torqueText: `Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm (from 4 bar catalogue torque x 1.25)`,
+          fos,
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm`
+        };
+      }
+
+      if (values.actuation === "2") {
+        const sa = getSingleActingSizingData(row, valveTorque);
+        if (!sa) return null;
+        return {
+          actuationLabel: "Pneumatic - Single Acting",
+          productLabel: "Butterfly Valve",
+          model: `${row.qtaSr} / ${sa.springNote}`,
+          valveSize: row.valveSize,
+          valveTorque,
+          torqueText: `Output Torque @ 5 bar: Start ${formatNm(sa.star5)} Nm / End ${formatNm(sa.end5)} Nm`,
+          fos: sa.fos,
+          meta: `FOS uses governing (minimum) SR torque at 5 bar` 
+        };
+      }
+
+      if (values.actuation === "4") {
+        const eqta = getEqtaSelections();
+        const actuatorTorque = Number(row.eqtaTorqueNm);
+        const fos = actuatorTorque / valveTorque;
+        const phaseText = eqta.phaseLabel ? ` | ${eqta.phaseLabel}` : "";
+        return {
+          actuationLabel: "Electrical - ON/OFF",
+          productLabel: "Butterfly Valve",
+          model: row.eqtaModel,
+          valveSize: row.valveSize,
+          valveTorque,
+          torqueText: `Output Torque basis: ${formatNm(actuatorTorque)} Nm (electric actuator rated torque)`,
+          fos,
+          meta: `${row.eqtaPartNumber} | ${row.eqtaDescription} | ${eqta.voltageLabel}${phaseText} | ${eqta.handwheelLabel}`
+        };
+      }
+
+      return null;
+    }
+
+    function renderValveActuatorSizing(productKey, values) {
+      const section = document.getElementById("butterflyActuatorSizingSection");
+      const target = document.getElementById("butterflyActuatorSizing");
+      if (!section || !target) return;
+
+      if (!(["ball", "butterfly"].includes(productKey)) || !["2", "3", "4"].includes(values.actuation)) {
+        section.style.display = "none";
+        target.innerHTML = "Actuator model recommendation is shown for actuation type 2, 3 and 4.";
+        return;
+      }
+
+      const sizing = productKey === "ball" ? getBallActuatorSizing(values) : getButterflyActuatorSizing(values);
+      if (!sizing) {
+        section.style.display = "block";
+        target.innerHTML = "Sizing data is not available for the selected combination.";
+        return;
+      }
+
+      section.style.display = "block";
+      target.innerHTML = `
+        <div><strong>${escapeHtml(sizing.actuationLabel)}</strong> for ${escapeHtml(sizing.productLabel || "Valve")} ${escapeHtml(sizing.valveSize)}.</div>
+        <div class="actuator-sizing-grid">
+          <div><strong>Model:</strong> ${escapeHtml(sizing.model)}</div>
+          <div><strong>Valve Torque:</strong> ${escapeHtml(formatNm(sizing.valveTorque))} Nm</div>
+          <div><strong>Actuator Torque Basis:</strong> ${escapeHtml(sizing.torqueText)}</div>
+          <div><strong>Factor Of Safety:</strong> <span class="fos-badge">${escapeHtml(formatFos(sizing.fos))}</span></div>
+        </div>
+        <div class="helper" style="margin-top:8px;">${escapeHtml(sizing.meta)}</div>
+      `;
+    }
+
     function renderReviewNotes(validation) {
       const list = document.getElementById("reviewNotes");
       list.innerHTML = "";
@@ -1562,6 +2057,12 @@
         const option = selectedOption(productKey, field.key, values[field.key]);
         addBreakdownRow(field.label, option.code, `${option.label}${option.dn ? " / " + option.dn : ""}`);
       });
+
+      if ((productKey === "butterfly" || productKey === "ball") && values.actuation === "4") {
+        const eqta = getEqtaSelections();
+        addBreakdownRow("EQTA Voltage", eqta.voltageCode, eqta.voltageLabel);
+        addBreakdownRow("EQTA Handwheel", eqta.handwheelCode, eqta.handwheelLabel);
+      }
     }
 
     function renderQtaDimensions(productKey, values) {
