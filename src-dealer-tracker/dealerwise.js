@@ -158,6 +158,11 @@ function renderProductRows() {
   tbody.innerHTML = "";
   if (!dealer || !region) return;
 
+  let totalPotential = 0;
+  let totalForecast = 0;
+  let totalActual = 0;
+  let totalOppCount = 0;
+
   PRODUCTS.forEach(product => {
     const rec = state.monthly.find(r =>
       r.month === month &&
@@ -175,7 +180,22 @@ function renderProductRows() {
       <td><input type="number" min="0" step="1" data-product="${esc(product)}" data-field="oppCount" value="${intNum(rec && rec.oppCount)}" /></td>
     `;
     tbody.appendChild(tr);
+
+    totalPotential += num(rec && rec.potential);
+    totalForecast += num(rec && rec.forecast);
+    totalActual += num(rec && rec.actual);
+    totalOppCount += intNum(rec && rec.oppCount);
   });
+
+  const totalRow = document.createElement("tr");
+  totalRow.innerHTML = `
+    <td><strong>Total</strong></td>
+    <td><strong>${esc(lakh(totalPotential))}</strong></td>
+    <td><strong>${esc(lakh(totalForecast))}</strong></td>
+    <td><strong>${esc(lakh(totalActual))}</strong></td>
+    <td><strong>${esc(String(totalOppCount))}</strong></td>
+  `;
+  tbody.appendChild(totalRow);
 }
 
 function saveProductRows() {
@@ -255,6 +275,9 @@ function renderPaAccounts() {
     a.product === "PA"
   );
 
+  const totalPotential = rows.reduce((sum, row) => sum + num(row.potential), 0);
+  const totalForecast = rows.reduce((sum, row) => sum + num(row.forecast), 0);
+
   tbody.innerHTML = rows.map(a => `
     <tr>
       <td>${esc(a.month)}</td>
@@ -267,7 +290,19 @@ function renderPaAccounts() {
       <td>${esc(lakh(a.forecast))}</td>
       <td>${esc(a.stage)}</td>
     </tr>
-  `).join("");
+  `).join("") + `
+    <tr>
+      <td><strong>Total</strong></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td><strong>${esc(String(rows.length))} Accounts</strong></td>
+      <td>${esc(productLabel("PA"))}</td>
+      <td><strong>${esc(lakh(totalPotential))}</strong></td>
+      <td><strong>${esc(lakh(totalForecast))}</strong></td>
+      <td>-</td>
+    </tr>
+  `;
 }
 
 function renderQuarterSummary() {
@@ -293,6 +328,11 @@ function renderQuarterSummary() {
       g.oppCount += intNum(r.oppCount);
     });
 
+  let totalPotential = 0;
+  let totalForecast = 0;
+  let totalActual = 0;
+  let totalOppCount = 0;
+
   PRODUCTS.forEach(product => {
     const g = grouped.get(product) || { product, potential: 0, forecast: 0, actual: 0, oppCount: 0 };
     const tr = document.createElement("tr");
@@ -305,7 +345,23 @@ function renderQuarterSummary() {
       <td>${esc(String(g.oppCount))}</td>
     `;
     tbody.appendChild(tr);
+
+    totalPotential += num(g.potential);
+    totalForecast += num(g.forecast);
+    totalActual += num(g.actual);
+    totalOppCount += intNum(g.oppCount);
   });
+
+  const totalRow = document.createElement("tr");
+  totalRow.innerHTML = `
+    <td><strong>Total</strong></td>
+    <td>-</td>
+    <td><strong>${esc(lakh(totalPotential))}</strong></td>
+    <td><strong>${esc(lakh(totalForecast))}</strong></td>
+    <td><strong>${esc(lakh(totalActual))}</strong></td>
+    <td><strong>${esc(String(totalOppCount))}</strong></td>
+  `;
+  tbody.appendChild(totalRow);
 }
 
 function quarterFromMonth(monthValue) {
