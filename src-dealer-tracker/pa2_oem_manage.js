@@ -103,7 +103,7 @@ function activatePlannerTab(tabName) {
   document.querySelectorAll("[data-pa2-tab]").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.pa2Tab === tabName);
   });
-  document.querySelectorAll("#pa2-tab-milestones, #pa2-tab-visit, #pa2-tab-action").forEach(panel => {
+  document.querySelectorAll("#pa2-tab-visit, #pa2-tab-action").forEach(panel => {
     panel.classList.toggle("active", panel.id === `pa2-tab-${tabName}`);
   });
 }
@@ -205,21 +205,21 @@ function renderMilestones() {
   if (!wrap) return;
 
   wrap.innerHTML = milestoneRows.map((row, idx) => `
-    <label style="text-transform:none; letter-spacing:0; font-weight:600;">
-      <span>
-        <input type="checkbox" data-milestone-idx="${idx}" ${row.completed ? "checked" : ""} />
-        ${esc(row.label)}
-      </span>
-      <span class="muted" style="font-size:12px;">Completed At: ${esc(formatTimestamp(row.completedAt))}</span>
-    </label>
+    <div class="pa2-step ${row.completed ? "done" : "pending"}">
+      <button class="pa2-step-btn" type="button" data-milestone-idx="${idx}">${row.completed ? "Completed" : "Mark Complete"}</button>
+      <div class="pa2-step-content">
+        <div class="pa2-step-title">${esc(row.label)}</div>
+        <div class="muted pa2-step-time">Completed At: ${esc(formatTimestamp(row.completedAt))}</div>
+      </div>
+    </div>
   `).join("");
 
-  wrap.querySelectorAll("input[type='checkbox'][data-milestone-idx]").forEach(input => {
-    input.addEventListener("change", () => {
-      const idx = intNum(input.dataset.milestoneIdx);
+  wrap.querySelectorAll(".pa2-step-btn[data-milestone-idx]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = intNum(btn.dataset.milestoneIdx);
       const row = milestoneRows[idx];
       if (!row) return;
-      row.completed = Boolean(input.checked);
+      row.completed = !row.completed;
       row.completedAt = row.completed ? new Date().toISOString() : "";
       deriveOnboardingSummary();
       renderMilestones();

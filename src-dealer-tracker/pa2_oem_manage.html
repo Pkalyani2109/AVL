@@ -6,7 +6,7 @@
   <title>PA2 OEM Plan Manager</title>
   <link rel="stylesheet" href="styles.css?v=20260711-01" />
 </head>
-<body>
+<body class="pa2-compact-page">
   <header class="topbar">
     <h1>PA2 OEM Plan Manager</h1>
     <p>Create, update, and remove OEM growth plans with initiative, onboarding, and forecast tracking.</p>
@@ -20,7 +20,7 @@
   <main class="shell">
     <section class="card">
       <h2>OEM Plan Entry</h2>
-      <div class="grid four">
+      <div class="grid four pa2-entry-grid">
         <label>
           Region / Branch
           <select id="pa2Region"></select>
@@ -32,13 +32,13 @@
             <option value="Direct">Direct Account</option>
           </select>
         </label>
-        <label>
+        <label class="span-2">
           Key Account / OEM Name
           <input id="pa2OemName" type="text" placeholder="JC Valves" />
         </label>
-        <label>
+        <label class="span-2">
           Product (Select multiple)
-          <select id="pa2Products" multiple size="4">
+          <select id="pa2Products" multiple size="3">
             <option value="Scotch Yoke">Scotch Yoke</option>
             <option value="KEVA">KEVA</option>
             <option value="Namur Cylinder">Namur Cylinder</option>
@@ -61,7 +61,7 @@
           Annual Actual (Cr)
           <input id="pa2AnnualActual" type="number" min="0" step="0.01" placeholder="0.00" />
         </label>
-        <label>
+        <label class="span-2">
           Plan Owner
           <input id="pa2Owner" type="text" placeholder="Sales Engineer / Branch Manager" />
         </label>
@@ -70,11 +70,11 @@
       <div class="grid two" style="margin-top:10px;">
         <label>
           Focus / Current Status
-          <textarea id="pa2FocusStatus" rows="3" placeholder="Current project focus and status"></textarea>
+          <textarea id="pa2FocusStatus" rows="2" placeholder="Current project focus and status"></textarea>
         </label>
         <label>
           Key Forecast Details / Next Steps
-          <textarea id="pa2NextSteps" rows="3" placeholder="Pipeline details, actions, and commitments"></textarea>
+          <textarea id="pa2NextSteps" rows="2" placeholder="Pipeline details, actions, and commitments"></textarea>
         </label>
       </div>
 
@@ -111,34 +111,34 @@
       <div class="grid two" style="margin-top:10px;">
         <label>
           Onboarding Steps Summary (Auto)
-          <textarea id="pa2OnboardingSteps" rows="3" readonly placeholder="Qualification, onboarding, and commercial closure in progress."></textarea>
+          <textarea id="pa2OnboardingSteps" rows="2" readonly placeholder="Qualification, onboarding, and commercial closure in progress."></textarea>
         </label>
         <label>
           Onboarding Remarks
-          <textarea id="pa2OnboardingRemark" rows="3" placeholder="Free-text remarks for onboarding"></textarea>
+          <textarea id="pa2OnboardingRemark" rows="2" placeholder="Free-text remarks for onboarding"></textarea>
         </label>
       </div>
 
       <div class="grid two" style="margin-top:10px;">
         <label>
           Action Plan Snapshot (Auto)
-          <textarea id="pa2ActionPlanAuto" rows="3" readonly placeholder="Auto summary from product action rows"></textarea>
+          <textarea id="pa2ActionPlanAuto" rows="2" readonly placeholder="Auto summary from product action rows"></textarea>
         </label>
         <label>
           Overall Action Plan Summary
-          <textarea id="pa2ActionPlan" rows="3" placeholder="Free-text overall action plan summary"></textarea>
+          <textarea id="pa2ActionPlan" rows="2" placeholder="Free-text overall action plan summary"></textarea>
         </label>
       </div>
 
-      <div class="tabs pa2-planner-tabs" style="margin-top:12px;">
-        <button class="tab active" data-pa2-tab="milestones">Onboarding Milestones</button>
-        <button class="tab" data-pa2-tab="visit">Visit Plan by Month</button>
-        <button class="tab" data-pa2-tab="action">Action Plan by Product</button>
-      </div>
+      <section class="card" style="margin-top:12px;">
+        <h2>Onboarding Milestones</h2>
+        <p class="muted" style="margin-top:8px;">Stepper view: click each milestone to mark complete. Completion date/time is recorded automatically.</p>
+        <div id="pa2MilestoneList" class="pa2-stepper"></div>
+      </section>
 
-      <div class="tab-panel active" id="pa2-tab-milestones">
-        <p class="muted" style="margin-top:8px;">Click each milestone when completed. Completion date/time is recorded automatically.</p>
-        <div id="pa2MilestoneList" class="grid three"></div>
+      <div class="tabs pa2-planner-tabs" style="margin-top:12px;">
+        <button class="tab" data-pa2-tab="visit">Visit Plan by Month</button>
+        <button class="tab active" data-pa2-tab="action">Action Plan by Product</button>
       </div>
 
       <div class="tab-panel" id="pa2-tab-visit">
@@ -161,7 +161,7 @@
         </div>
       </div>
 
-      <div class="tab-panel" id="pa2-tab-action">
+      <div class="tab-panel active" id="pa2-tab-action">
         <div class="row" style="margin-top:8px;">
           <button id="btnAddActionItem" class="btn secondary" type="button">Add Product Action</button>
         </div>
@@ -191,6 +191,6 @@
     </section>
   </main>
 
-  <script src="pa2_oem_manage.js?v=20260711-04"></script>
+  <script src="pa2_oem_manage.js?v=20260711-06"></script>
 </body>
 </html>
