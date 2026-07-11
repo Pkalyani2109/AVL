@@ -9,13 +9,14 @@
 <body>
   <header class="topbar">
     <h1>Dealer-wise Business Manager</h1>
-    <p>Manage product-wise potential, forecast, actuals, and mapped key accounts for Butterfly Valve business.</p>
+    <p>Manage dealer-wise product potential, forecast, actuals, and mapped key accounts.</p>
     <p class="muted" style="margin-top:8px; color:#e7f0fb;">Quick Navigation</p>
     <div class="row" style="margin-top:10px;">
       <a class="btn secondary" href="index.html">PA1 Home</a>
       <a class="btn secondary" href="dealerwise.html">PA1 Dealer-wise</a>
       <a class="btn secondary" href="pa2_oem.html">PA2 OEM List</a>
       <a class="btn secondary" href="pa2_oem_manage.html">PA2 OEM Manager</a>
+      <a class="btn secondary" href="pa2_oem_detail.html">PA2 Detailed View</a>
       <a class="btn ghost" href="../janatics_part_number_generator_all_products.html">Product Code Generator</a>
     </div>
   </header>
@@ -86,8 +87,8 @@
     </section>
 
     <section class="card">
-      <h2>Key Accounts Mapping (Butterfly Valve)</h2>
-      <p class="muted">Accounts added here are tagged to product BFV.</p>
+      <h2>Key Accounts Mapping</h2>
+      <p class="muted">Add and save key accounts with product-wise potential and forecast.</p>
       <div class="grid four">
         <label>
           Account Name
@@ -102,6 +103,16 @@
           <input id="dwAccountForecast" type="number" min="0" step="0.01" />
         </label>
         <label>
+          Product
+          <select id="dwAccountProduct">
+            <option value="PA">BFV - Butterfly Valve</option>
+            <option value="BV">BV - Ball Valve</option>
+            <option value="QTA">QTA - Quarter Turn Actuator</option>
+            <option value="PV">PV - Pulse Valve</option>
+            <option value="ASV">ASV - Angle Seat Valve</option>
+          </select>
+        </label>
+        <label>
           Stage
           <select id="dwAccountStage">
             <option value="Prospect">Prospect</option>
@@ -113,7 +124,7 @@
         </label>
       </div>
       <div class="row">
-        <button id="btnDwAddAccount" class="btn secondary">Add BFV Key Account</button>
+        <button id="btnDwAddAccount" class="btn secondary">Add Key Account</button>
       </div>
       <div class="table-wrap" style="margin-top:10px;">
         <table>

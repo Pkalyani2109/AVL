@@ -69,7 +69,7 @@ function bindEvents() {
     renderAll();
   });
   q("btnDwSaveProducts").addEventListener("click", saveProductRows);
-  q("btnDwAddAccount").addEventListener("click", addPaAccount);
+  q("btnDwAddAccount").addEventListener("click", addKeyAccount);
   q("btnDwSaveEngineer").addEventListener("click", saveSalesEngineerMapping);
 
   const importBtn = q("btnDwImportData");
@@ -116,7 +116,7 @@ function renderAll() {
   syncSalesEngineerInput();
   renderContext();
   renderProductRows();
-  renderPaAccounts();
+  renderKeyAccounts();
   renderQuarterSummary();
 }
 
@@ -234,12 +234,21 @@ function saveProductRows() {
   renderAll();
 }
 
-function addPaAccount() {
+function addKeyAccount() {
   const dealer = selectedDealer();
   const region = selectedRegion();
   const month = q("dwMonth").value;
   const account = q("dwAccountName").value.trim();
+  const product = q("dwAccountProduct") ? q("dwAccountProduct").value : "PA";
   if (!dealer || !region || !month || !account) return;
+
+  state.accounts = state.accounts.filter(a => !(
+    a.month === month &&
+    a.regionId === region.id &&
+    a.dealerId === dealer.id &&
+    a.account.toUpperCase() === account.toUpperCase() &&
+    a.product === product
+  ));
 
   state.accounts.push({
     id: crypto.randomUUID(),
@@ -247,7 +256,7 @@ function addPaAccount() {
     regionId: region.id,
     dealerId: dealer.id,
     account,
-    product: "PA",
+    product,
     potential: num(q("dwAccountPotential").value),
     forecast: num(q("dwAccountForecast").value),
     stage: q("dwAccountStage").value
@@ -256,11 +265,12 @@ function addPaAccount() {
   q("dwAccountName").value = "";
   q("dwAccountPotential").value = "";
   q("dwAccountForecast").value = "";
+  if (q("dwAccountProduct")) q("dwAccountProduct").value = "PA";
   persist();
-  renderPaAccounts();
+  renderKeyAccounts();
 }
 
-function renderPaAccounts() {
+function renderKeyAccounts() {
   const dealer = selectedDealer();
   const region = selectedRegion();
   const month = q("dwMonth").value;
@@ -271,8 +281,7 @@ function renderPaAccounts() {
   const rows = state.accounts.filter(a =>
     a.month === month &&
     a.regionId === region.id &&
-    a.dealerId === dealer.id &&
-    a.product === "PA"
+    a.dealerId === dealer.id
   );
 
   const totalPotential = rows.reduce((sum, row) => sum + num(row.potential), 0);
@@ -297,7 +306,7 @@ function renderPaAccounts() {
       <td>-</td>
       <td>-</td>
       <td><strong>${esc(String(rows.length))} Accounts</strong></td>
-      <td>${esc(productLabel("PA"))}</td>
+      <td><strong>All Products</strong></td>
       <td><strong>${esc(lakh(totalPotential))}</strong></td>
       <td><strong>${esc(lakh(totalForecast))}</strong></td>
       <td>-</td>
@@ -588,6 +597,7 @@ function importDealerCsv(event) {
 
         const accountName = get("keyAccount") || get("accountName");
         if (accountName) {
+          const accountProduct = normalizeProduct(get("product"));
           const accountPotential = get("accountPotentialL") !== "" ? num(get("accountPotentialL")) : potential;
           const accountForecast = get("accountForecastL") !== "" ? num(get("accountForecastL")) : forecast;
           const accountStage = get("stage") || get("accountStage") || "Prospect";
@@ -597,7 +607,7 @@ function importDealerCsv(event) {
             a.regionId === region.id &&
             a.dealerId === dealer.id &&
             a.account.toUpperCase() === accountName.toUpperCase() &&
-            a.product === "PA"
+            a.product === accountProduct
           ));
 
           state.accounts.push({
@@ -606,7 +616,7 @@ function importDealerCsv(event) {
             regionId: region.id,
             dealerId: dealer.id,
             account: accountName,
-            product: "PA",
+            product: accountProduct,
             potential: accountPotential,
             forecast: accountForecast,
             stage: accountStage
@@ -618,7 +628,7 @@ function importDealerCsv(event) {
       persist();
       renderSelectors();
       renderAll();
-      setImportStatus(`Import successful: ${dealerCount} dealer rows, ${monthlyCount} monthly records, ${accountCount} BFV key accounts.`, true);
+      setImportStatus(`Import successful: ${dealerCount} dealer rows, ${monthlyCount} monthly records, ${accountCount} key accounts.`, true);
     } catch (err) {
       console.error(err);
       setImportStatus("Import failed. Please use the downloaded template and upload CSV format.", false);
