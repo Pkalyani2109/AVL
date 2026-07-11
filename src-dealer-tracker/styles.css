@@ -280,6 +280,12 @@ textarea:focus {
   color: #0b3a70;
 }
 
+.pa2-planner-tabs .tab {
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  padding: 10px 16px;
+}
+
 .region-tabs {
   display: flex;
   flex-wrap: wrap;
