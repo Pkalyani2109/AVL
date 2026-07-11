@@ -214,6 +214,7 @@ function bindEvents() {
 
   q("btnAddRegion").addEventListener("click", addRegion);
   q("btnAddDealer").addEventListener("click", addDealer);
+  q("btnRemoveDealer").addEventListener("click", removeDealer);
   q("btnSaveForecast").addEventListener("click", saveForecast);
   q("btnSaveSupport").addEventListener("click", saveSupport);
   q("btnSaveAccount").addEventListener("click", saveAccount);
@@ -417,6 +418,35 @@ function addDealer() {
     filterDealerEl.value = newDealer.id;
   }
   setHierarchyStatus(`Dealer ${name} added to ${regionName(regionId)}.`, true);
+}
+
+function removeDealer() {
+  const removeEl = q("dealerToRemove");
+  if (!removeEl || !removeEl.value) {
+    setHierarchyStatus("Select a dealer to remove.", false);
+    return;
+  }
+
+  const dealerId = removeEl.value;
+  const dealer = state.dealers.find(d => d.id === dealerId);
+  if (!dealer) {
+    setHierarchyStatus("Selected dealer was not found.", false);
+    return;
+  }
+
+  state.dealers = state.dealers.filter(d => d.id !== dealerId);
+  state.monthly = state.monthly.filter(r => r.dealerId !== dealerId);
+  state.supports = state.supports.filter(r => r.dealerId !== dealerId);
+  state.accounts = state.accounts.filter(r => r.dealerId !== dealerId);
+  state.activities = state.activities.filter(r => r.dealerId !== dealerId);
+
+  if (q("filterDealer") && q("filterDealer").value === dealerId) {
+    q("filterDealer").value = "ALL";
+  }
+
+  persist();
+  renderAll();
+  setHierarchyStatus(`Dealer ${dealer.name} removed from ${regionName(dealer.regionId)}.`, true);
 }
 
 function saveForecast() {
@@ -655,6 +685,7 @@ function fillRegionDealerSelects() {
     ["activityRegion", "activityDealer", false]
   ];
   map.forEach(([r, d, all]) => syncDealerByRegion(r, d, all));
+  syncHierarchyDealerRemovalList();
 }
 
 function syncDealerByRegion(regionSelectId, dealerSelectId, includeAll) {
@@ -672,6 +703,29 @@ function syncDealerByRegion(regionSelectId, dealerSelectId, includeAll) {
 
   if (Array.from(dealerSelect.options).some(o => o.value === prev)) {
     dealerSelect.value = prev;
+  }
+}
+
+function syncHierarchyDealerRemovalList() {
+  const removeSel = q("dealerToRemove");
+  if (!removeSel) return;
+
+  const prev = removeSel.value;
+  removeSel.innerHTML = "";
+
+  const filterRegion = q("filterRegion") && q("filterRegion").value !== "ALL" ? q("filterRegion").value : "";
+  const dealerRegion = q("dealerRegion") ? q("dealerRegion").value : "";
+  const selectedRegionId = filterRegion || dealerRegion;
+
+  const list = state.dealers.filter(d => !selectedRegionId || d.regionId === selectedRegionId);
+  if (!list.length) {
+    removeSel.appendChild(opt("", "No dealers available"));
+    return;
+  }
+
+  list.forEach(d => removeSel.appendChild(opt(d.id, `${d.name} (${d.city || "-"})`)));
+  if (Array.from(removeSel.options).some(o => o.value === prev)) {
+    removeSel.value = prev;
   }
 }
 
