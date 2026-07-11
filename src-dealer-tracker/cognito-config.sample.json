@@ -1,0 +1,8 @@
+{
+  "region": "ap-south-1",
+  "userPoolId": "ap-south-1_xxxxxxxx",
+  "appClientId": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "customAuthFlow": true,
+  "customChallengeName": "CUSTOM_CHALLENGE",
+  "codeParameterName": "code"
+}

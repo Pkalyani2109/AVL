@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dealer Growth Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Dealer Growth Tracker</h1>
+    <p>Region to dealer to key account to opportunities. Monthly review control tower.</p>
+  </header>
+
+  <main class="shell">
+    <section class="card auth-card">
+      <h2>Authentication (Cognito Ready)</h2>
+      <p class="muted">Enter a valid email and request OTP via Cognito Custom Auth flow.</p>
+      <div class="grid two">
+        <label>
+          Email
+          <input id="authEmail" type="email" placeholder="name@company.com" />
+        </label>
+        <label>
+          OTP Code
+          <input id="authCode" type="text" placeholder="Enter code" />
+        </label>
+      </div>
+      <div class="row">
+        <button id="btnRequestCode" class="btn">Request Code</button>
+        <button id="btnVerifyCode" class="btn secondary">Verify Code</button>
+        <button id="btnDemoUnlock" class="btn ghost" title="For local demo only">Demo Unlock</button>
+      </div>
+      <p id="authStatus" class="status">Locked. Authenticate to edit data.</p>
+      <details>
+        <summary>Setup notes</summary>
+        <ul>
+          <li>Copy cognito-config.sample.json to cognito-config.json and update values.</li>
+          <li>Enable CUSTOM_AUTH challenge lambda for email code delivery/validation.</li>
+          <li>If backend is not configured, use Demo Unlock for UI evaluation.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="card kpi-card">
+      <h2>Monthly Snapshot</h2>
+      <div class="kpis" id="kpiGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2>Monthly Filter</h2>
+      <div class="grid four">
+        <label>
+          Month
+          <input id="filterMonth" type="month" />
+        </label>
+        <label>
+          Region
+          <select id="filterRegion"></select>
+        </label>
+        <label>
+          Dealer
+          <select id="filterDealer"></select>
+        </label>
+        <label>
+          Product
+          <select id="filterProduct">
+            <option value="ALL">All Products</option>
+            <option value="PA">PA</option>
+            <option value="BV">BV</option>
+            <option value="QTA">QTA</option>
+            <option value="PV">PV</option>
+            <option value="ASV">ASV</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Data Entry</h2>
+      <div class="tabs">
+        <button class="tab active" data-tab="hierarchy">Hierarchy</button>
+        <button class="tab" data-tab="forecast">Forecast vs Actual</button>
+        <button class="tab" data-tab="support">Support Needed</button>
+        <button class="tab" data-tab="accounts">Key Accounts</button>
+        <button class="tab" data-tab="activities">Visit and Exhibition</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-hierarchy">
+        <div class="grid three">
+          <label>
+            Region Name
+            <input id="regionName" type="text" placeholder="South" />
+          </label>
+          <label>
+            Dealer Name
+            <input id="dealerName" type="text" placeholder="ABC Pneumatics" />
+          </label>
+          <label>
+            Dealer City
+            <input id="dealerCity" type="text" placeholder="Chennai" />
+          </label>
+        </div>
+        <div class="row">
+          <button id="btnAddRegion" class="btn">Add Region</button>
+          <button id="btnAddDealer" class="btn secondary">Add Dealer</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-forecast">
+        <div class="grid four">
+          <label>
+            Region
+            <select id="entryRegion"></select>
+          </label>
+          <label>
+            Dealer
+            <select id="entryDealer"></select>
+          </label>
+          <label>
+            Product
+            <select id="entryProduct">
+              <option value="PA">PA</option>
+              <option value="BV">BV</option>
+              <option value="QTA">QTA</option>
+              <option value="PV">PV</option>
+              <option value="ASV">ASV</option>
+            </select>
+          </label>
+          <label>
+            Month
+            <input id="entryMonth" type="month" />
+          </label>
+          <label>
+            Dealer Potential
+            <input id="entryPotential" type="number" min="0" step="0.01" placeholder="0" />
+          </label>
+          <label>
+            Forecast
+            <input id="entryForecast" type="number" min="0" step="0.01" placeholder="0" />
+          </label>
+          <label>
+            Actual
+            <input id="entryActual" type="number" min="0" step="0.01" placeholder="0" />
+          </label>
+          <label>
+            Opportunity Count
+            <input id="entryOppCount" type="number" min="0" step="1" placeholder="0" />
+          </label>
+        </div>
+        <button id="btnSaveForecast" class="btn">Save Monthly Record</button>
+      </div>
+
+      <div class="tab-panel" id="tab-support">
+        <div class="grid three">
+          <label>
+            Region
+            <select id="supportRegion"></select>
+          </label>
+          <label>
+            Dealer
+            <select id="supportDealer"></select>
+          </label>
+          <label>
+            Month
+            <input id="supportMonth" type="month" />
+          </label>
+        </div>
+        <label>
+          Support Requirement
+          <textarea id="supportText" rows="3" placeholder="Training, product demo, pricing support, stock support, co-marketing..."></textarea>
+        </label>
+        <button id="btnSaveSupport" class="btn">Save Support Request</button>
+      </div>
+
+      <div class="tab-panel" id="tab-accounts">
+        <div class="grid four">
+          <label>
+            Region
+            <select id="accountRegion"></select>
+          </label>
+          <label>
+            Dealer
+            <select id="accountDealer"></select>
+          </label>
+          <label>
+            Account Name
+            <input id="accountName" type="text" placeholder="XYZ Foods Plant-2" />
+          </label>
+          <label>
+            Product
+            <select id="accountProduct">
+              <option value="PA">PA</option>
+              <option value="BV">BV</option>
+              <option value="QTA">QTA</option>
+              <option value="PV">PV</option>
+              <option value="ASV">ASV</option>
+            </select>
+          </label>
+          <label>
+            Potential
+            <input id="accountPotential" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            Forecast
+            <input id="accountForecast" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            Month
+            <input id="accountMonth" type="month" />
+          </label>
+          <label>
+            Stage
+            <select id="accountStage">
+              <option value="Prospect">Prospect</option>
+              <option value="Qualified">Qualified</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Won">Won</option>
+              <option value="Lost">Lost</option>
+            </select>
+          </label>
+        </div>
+        <button id="btnSaveAccount" class="btn">Save Key Account Opportunity</button>
+      </div>
+
+      <div class="tab-panel" id="tab-activities">
+        <div class="grid four">
+          <label>
+            Region
+            <select id="activityRegion"></select>
+          </label>
+          <label>
+            Dealer
+            <select id="activityDealer"></select>
+          </label>
+          <label>
+            Month
+            <input id="activityMonth" type="month" />
+          </label>
+          <label>
+            Visit Plan
+            <input id="visitPlan" type="number" min="0" step="1" />
+          </label>
+          <label>
+            Visit Done
+            <input id="visitDone" type="number" min="0" step="1" />
+          </label>
+          <label>
+            Exhibitions Attended
+            <input id="expoAttended" type="number" min="0" step="1" />
+          </label>
+          <label>
+            Exhibitions Hosted
+            <input id="expoHosted" type="number" min="0" step="1" />
+          </label>
+        </div>
+        <button id="btnSaveActivity" class="btn">Save Activity</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Monthly Review Table</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Region</th>
+              <th>Dealer</th>
+              <th>Product</th>
+              <th>Potential</th>
+              <th>Forecast</th>
+              <th>Actual</th>
+              <th>Gap</th>
+              <th>Opp</th>
+              <th>Support</th>
+            </tr>
+          </thead>
+          <tbody id="reviewRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Key Account Pipeline</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Region</th>
+              <th>Dealer</th>
+              <th>Account</th>
+              <th>Product</th>
+              <th>Potential</th>
+              <th>Forecast</th>
+              <th>Stage</th>
+            </tr>
+          </thead>
+          <tbody id="accountRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
