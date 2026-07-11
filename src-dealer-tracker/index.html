@@ -69,6 +69,16 @@
           <input id="filterMonth" type="month" />
         </label>
         <label>
+          Quarter
+          <select id="filterQuarter">
+            <option value="ALL">All Quarters</option>
+            <option value="Q1">Q1 (Apr-Jun)</option>
+            <option value="Q2">Q2 (Jul-Sep)</option>
+            <option value="Q3">Q3 (Oct-Dec)</option>
+            <option value="Q4">Q4 (Jan-Mar)</option>
+          </select>
+        </label>
+        <label>
           Region
           <select id="filterRegion"></select>
         </label>
@@ -152,6 +162,10 @@
             <input id="entryMonth" type="month" />
           </label>
           <label>
+            Quarter
+            <input id="entryQuarter" type="text" readonly />
+          </label>
+          <label>
             Dealer Potential (Lakhs)
             <input id="entryPotential" type="number" min="0" step="0.01" placeholder="0" />
           </label>
@@ -184,6 +198,10 @@
           <label>
             Month
             <input id="supportMonth" type="month" />
+          </label>
+          <label>
+            Quarter
+            <input id="supportQuarter" type="text" readonly />
           </label>
         </div>
         <label>
@@ -230,6 +248,10 @@
             <input id="accountMonth" type="month" />
           </label>
           <label>
+            Quarter
+            <input id="accountQuarter" type="text" readonly />
+          </label>
+          <label>
             Stage
             <select id="accountStage">
               <option value="Prospect">Prospect</option>
@@ -256,6 +278,10 @@
           <label>
             Month
             <input id="activityMonth" type="month" />
+          </label>
+          <label>
+            Quarter
+            <input id="activityQuarter" type="text" readonly />
           </label>
           <label>
             Visit Plan
@@ -285,6 +311,7 @@
           <thead>
             <tr>
               <th>Month</th>
+              <th>Quarter</th>
               <th>Region</th>
               <th>Dealer</th>
               <th>Product</th>
@@ -302,12 +329,35 @@
     </section>
 
     <section class="card">
+      <h2>Quarterly Review Table</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Quarter</th>
+              <th>Region</th>
+              <th>Dealer</th>
+              <th>Product</th>
+              <th>Potential (L)</th>
+              <th>Forecast (L)</th>
+              <th>Actual (L)</th>
+              <th>Gap (L)</th>
+              <th>Opp</th>
+            </tr>
+          </thead>
+          <tbody id="quarterlyReviewRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>Key Account Pipeline</h2>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Month</th>
+              <th>Quarter</th>
               <th>Region</th>
               <th>Dealer</th>
               <th>Account</th>

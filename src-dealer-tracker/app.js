@@ -115,6 +115,12 @@ function ensureDefaults() {
   if (!supportMonth.value) supportMonth.value = nowMonth;
   if (!accountMonth.value) accountMonth.value = nowMonth;
   if (!activityMonth.value) activityMonth.value = nowMonth;
+
+  if (!q("filterQuarter").value) q("filterQuarter").value = "ALL";
+  updateQuarterField("entryMonth", "entryQuarter");
+  updateQuarterField("supportMonth", "supportQuarter");
+  updateQuarterField("accountMonth", "accountQuarter");
+  updateQuarterField("activityMonth", "activityQuarter");
 }
 
 function bindEvents() {
@@ -122,8 +128,17 @@ function bindEvents() {
   q("btnVerifyCode").addEventListener("click", verifyCode);
   q("btnDemoUnlock").addEventListener("click", demoUnlock);
 
-  ["filterMonth", "filterRegion", "filterDealer", "filterProduct"].forEach(id => {
+  ["filterMonth", "filterQuarter", "filterRegion", "filterDealer", "filterProduct"].forEach(id => {
     q(id).addEventListener("change", renderAll);
+  });
+
+  [
+    ["entryMonth", "entryQuarter"],
+    ["supportMonth", "supportQuarter"],
+    ["accountMonth", "accountQuarter"],
+    ["activityMonth", "activityQuarter"]
+  ].forEach(([monthId, quarterId]) => {
+    q(monthId).addEventListener("change", () => updateQuarterField(monthId, quarterId));
   });
 
   const exportBtn = q("btnExportCsvDb");
@@ -391,6 +406,7 @@ function renderAll() {
   renderRegionTabs();
   renderKpis();
   renderMonthlyTable();
+  renderQuarterlyTable();
   renderAccountsTable();
   renderDealerDirectory();
 }
@@ -521,6 +537,7 @@ function renderMonthlyTable() {
     const gap = r.forecast - r.actual;
     return {
       month: r.month,
+      quarter: quarterFromMonth(r.month),
       region: regionName(r.regionId),
       dealer: dealerName(r.dealerId),
       product: r.product,
@@ -536,6 +553,7 @@ function renderMonthlyTable() {
   q("reviewRows").innerHTML = rows.map(r => `
     <tr>
       <td>${esc(r.month)}</td>
+      <td>${esc(r.quarter)}</td>
       <td>${esc(r.region)}</td>
       <td>${esc(r.dealer)}</td>
       <td>${esc(r.product)}</td>
@@ -549,14 +567,59 @@ function renderMonthlyTable() {
   `).join("");
 }
 
+function renderQuarterlyTable() {
+  const tbody = q("quarterlyReviewRows");
+  if (!tbody) return;
+
+  const grouped = new Map();
+  filteredMonthly().forEach(r => {
+    const quarter = quarterFromMonth(r.month);
+    const key = [quarter, r.regionId, r.dealerId, r.product].join("::");
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        quarter,
+        region: regionName(r.regionId),
+        dealer: dealerName(r.dealerId),
+        product: r.product,
+        potential: 0,
+        forecast: 0,
+        actual: 0,
+        opp: 0
+      });
+    }
+    const g = grouped.get(key);
+    g.potential += num(r.potential);
+    g.forecast += num(r.forecast);
+    g.actual += num(r.actual);
+    g.opp += intNum(r.oppCount);
+  });
+
+  const rows = Array.from(grouped.values());
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.quarter)}</td>
+      <td>${esc(r.region)}</td>
+      <td>${esc(r.dealer)}</td>
+      <td>${esc(r.product)}</td>
+      <td>${esc(money(r.potential))}</td>
+      <td>${esc(money(r.forecast))}</td>
+      <td>${esc(money(r.actual))}</td>
+      <td>${esc(money(r.forecast - r.actual))}</td>
+      <td>${esc(String(r.opp))}</td>
+    </tr>
+  `).join("");
+}
+
 function renderAccountsTable() {
   const month = q("filterMonth").value;
+  const quarter = q("filterQuarter").value;
   const region = q("filterRegion").value;
   const dealer = q("filterDealer").value;
   const product = q("filterProduct").value;
 
   const rows = state.accounts.filter(a => {
-    if (month && a.month !== month) return false;
+    if (month && quarter === "ALL" && a.month !== month) return false;
+    if (quarter && quarter !== "ALL" && quarterFromMonth(a.month) !== quarter) return false;
     if (region && region !== "ALL" && a.regionId !== region) return false;
     if (dealer && dealer !== "ALL" && a.dealerId !== dealer) return false;
     if (product && product !== "ALL" && a.product !== product) return false;
@@ -566,6 +629,7 @@ function renderAccountsTable() {
   q("accountRows").innerHTML = rows.map(a => `
     <tr>
       <td>${esc(a.month)}</td>
+      <td>${esc(quarterFromMonth(a.month))}</td>
       <td>${esc(regionName(a.regionId))}</td>
       <td>${esc(dealerName(a.dealerId))}</td>
       <td>${esc(a.account)}</td>
@@ -579,12 +643,14 @@ function renderAccountsTable() {
 
 function filteredMonthly() {
   const month = q("filterMonth").value;
+  const quarter = q("filterQuarter").value;
   const region = q("filterRegion").value;
   const dealer = q("filterDealer").value;
   const product = q("filterProduct").value;
 
   return state.monthly.filter(r => {
-    if (month && r.month !== month) return false;
+    if (month && quarter === "ALL" && r.month !== month) return false;
+    if (quarter && quarter !== "ALL" && quarterFromMonth(r.month) !== quarter) return false;
     if (region && region !== "ALL" && r.regionId !== region) return false;
     if (dealer && dealer !== "ALL" && r.dealerId !== dealer) return false;
     if (product && product !== "ALL" && r.product !== product) return false;
@@ -594,11 +660,13 @@ function filteredMonthly() {
 
 function filteredSupports() {
   const month = q("filterMonth").value;
+  const quarter = q("filterQuarter").value;
   const region = q("filterRegion").value;
   const dealer = q("filterDealer").value;
 
   return state.supports.filter(s => {
-    if (month && s.month !== month) return false;
+    if (month && quarter === "ALL" && s.month !== month) return false;
+    if (quarter && quarter !== "ALL" && quarterFromMonth(s.month) !== quarter) return false;
     if (region && region !== "ALL" && s.regionId !== region) return false;
     if (dealer && dealer !== "ALL" && s.dealerId !== dealer) return false;
     return true;
@@ -607,15 +675,33 @@ function filteredSupports() {
 
 function filteredActivities() {
   const month = q("filterMonth").value;
+  const quarter = q("filterQuarter").value;
   const region = q("filterRegion").value;
   const dealer = q("filterDealer").value;
 
   return state.activities.filter(a => {
-    if (month && a.month !== month) return false;
+    if (month && quarter === "ALL" && a.month !== month) return false;
+    if (quarter && quarter !== "ALL" && quarterFromMonth(a.month) !== quarter) return false;
     if (region && region !== "ALL" && a.regionId !== region) return false;
     if (dealer && dealer !== "ALL" && a.dealerId !== dealer) return false;
     return true;
   });
+}
+
+function quarterFromMonth(monthValue) {
+  if (!monthValue || monthValue.length < 7) return "-";
+  const m = Number(monthValue.slice(5, 7));
+  if (m >= 4 && m <= 6) return "Q1";
+  if (m >= 7 && m <= 9) return "Q2";
+  if (m >= 10 && m <= 12) return "Q3";
+  return "Q4";
+}
+
+function updateQuarterField(monthId, quarterId) {
+  const monthEl = q(monthId);
+  const quarterEl = q(quarterId);
+  if (!monthEl || !quarterEl) return;
+  quarterEl.value = quarterFromMonth(monthEl.value);
 }
 
 function regionName(id) {
@@ -686,7 +772,7 @@ function exportLocalDbCsv() {
   state.monthly.forEach(m => {
     rows.push([
       "monthly", m.id, m.month, m.regionId, m.dealerId, m.product, m.potential, m.forecast, m.actual, m.oppCount,
-      "", "", "", "", "", "", "", "", "", ""
+      quarterFromMonth(m.month), "", "", "", "", "", "", "", "", ""
     ]);
   });
 

@@ -57,7 +57,10 @@ function bindEvents() {
     syncSalesEngineerInput();
     renderAll();
   });
-  q("dwMonth").addEventListener("change", renderAll);
+  q("dwMonth").addEventListener("change", () => {
+    q("dwQuarter").value = quarterFromMonth(q("dwMonth").value);
+    renderAll();
+  });
   q("btnDwSaveProducts").addEventListener("click", saveProductRows);
   q("btnDwAddAccount").addEventListener("click", addPaAccount);
   q("btnDwSaveEngineer").addEventListener("click", saveSalesEngineerMapping);
@@ -67,6 +70,7 @@ function initDefaults() {
   if (!q("dwMonth").value) {
     q("dwMonth").value = new Date().toISOString().slice(0, 7);
   }
+  q("dwQuarter").value = quarterFromMonth(q("dwMonth").value);
 }
 
 function renderSelectors() {
@@ -100,6 +104,7 @@ function renderAll() {
   renderContext();
   renderProductRows();
   renderPaAccounts();
+  renderQuarterSummary();
 }
 
 function syncSalesEngineerInput() {
@@ -128,7 +133,7 @@ function renderContext() {
   const region = selectedRegion();
   const engineer = dealer && dealer.salesEngineer ? dealer.salesEngineer : "Not assigned";
   q("dwContext").textContent = dealer
-    ? `Region: ${region ? region.name : "-"} | Dealer: ${dealer.name} | Janatics Sales Engineer: ${engineer}`
+    ? `Region: ${region ? region.name : "-"} | Dealer: ${dealer.name} | Month: ${q("dwMonth").value} | Quarter: ${quarterFromMonth(q("dwMonth").value)} | Janatics Sales Engineer: ${engineer}`
     : "Select a dealer to manage product-wise business.";
 }
 
@@ -240,6 +245,7 @@ function renderPaAccounts() {
   tbody.innerHTML = rows.map(a => `
     <tr>
       <td>${esc(a.month)}</td>
+      <td>${esc(quarterFromMonth(a.month))}</td>
       <td>${esc(dealer.name)}</td>
       <td>${esc(dealer.salesEngineer || "-")}</td>
       <td>${esc(a.account)}</td>
@@ -249,6 +255,53 @@ function renderPaAccounts() {
       <td>${esc(a.stage)}</td>
     </tr>
   `).join("");
+}
+
+function renderQuarterSummary() {
+  const dealer = selectedDealer();
+  const region = selectedRegion();
+  const quarter = quarterFromMonth(q("dwMonth").value);
+  const tbody = q("dwQuarterRows");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  if (!dealer || !region) return;
+
+  const grouped = new Map();
+  state.monthly
+    .filter(r => r.regionId === region.id && r.dealerId === dealer.id && quarterFromMonth(r.month) === quarter)
+    .forEach(r => {
+      if (!grouped.has(r.product)) {
+        grouped.set(r.product, { product: r.product, potential: 0, forecast: 0, actual: 0, oppCount: 0 });
+      }
+      const g = grouped.get(r.product);
+      g.potential += num(r.potential);
+      g.forecast += num(r.forecast);
+      g.actual += num(r.actual);
+      g.oppCount += intNum(r.oppCount);
+    });
+
+  PRODUCTS.forEach(product => {
+    const g = grouped.get(product) || { product, potential: 0, forecast: 0, actual: 0, oppCount: 0 };
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${esc(quarter)}</td>
+      <td>${esc(g.product)}</td>
+      <td>${esc(lakh(g.potential))}</td>
+      <td>${esc(lakh(g.forecast))}</td>
+      <td>${esc(lakh(g.actual))}</td>
+      <td>${esc(String(g.oppCount))}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function quarterFromMonth(monthValue) {
+  if (!monthValue || monthValue.length < 7) return "-";
+  const m = Number(monthValue.slice(5, 7));
+  if (m >= 4 && m <= 6) return "Q1";
+  if (m >= 7 && m <= 9) return "Q2";
+  if (m >= 10 && m <= 12) return "Q3";
+  return "Q4";
 }
 
 function lakh(v) {
