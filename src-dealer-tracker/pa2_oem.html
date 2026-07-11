@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PA2 OEM Growth Planner</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>PA2 OEM Growth Planner</h1>
+    <p>Track region-wise OEM growth plans for Scotch Yoke, KEVA, Namur Cylinder, and Automation.</p>
+    <div class="row" style="margin-top:10px;">
+      <a class="btn ghost" href="index.html">Back to Tracker Home</a>
+      <a class="btn secondary" href="dealerwise.html">Open PA1 Dealer-wise Page</a>
+      <a class="btn secondary" href="../janatics_part_number_generator_all_products.html">Open Janatics Product Code Generator</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="card">
+      <h2>PA2 Structure</h2>
+      <div class="grid three">
+        <div class="kpi">
+          <div class="label">PA1 Track</div>
+          <div class="value">Dealer Business</div>
+        </div>
+        <div class="kpi">
+          <div class="label">PA2 Track</div>
+          <div class="value">OEM / Direct Accounts</div>
+        </div>
+        <div class="kpi">
+          <div class="label">View</div>
+          <div class="value">Region-Specific Growth Plans</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Region Tabs</h2>
+      <p class="muted">Select a region tab to manage branch-specific OEM growth plans.</p>
+      <div id="pa2RegionTabs" class="region-tabs"></div>
+    </section>
+
+    <section class="card">
+      <h2>OEM Plan Entry</h2>
+      <div class="row" style="margin-top:0; margin-bottom:8px;">
+        <button id="btnPa2NewPlan" class="btn">Add New OEM Plan</button>
+      </div>
+
+      <div id="pa2EntryFormWrap" style="display:none;">
+      <div class="grid four">
+        <label>
+          Region / Branch
+          <select id="pa2Region"></select>
+        </label>
+        <label>
+          Account Type
+          <select id="pa2AccountType">
+            <option value="OEM">OEM</option>
+            <option value="Direct">Direct Account</option>
+          </select>
+        </label>
+        <label>
+          Key Account / OEM Name
+          <input id="pa2OemName" type="text" placeholder="JC Valves" />
+        </label>
+        <label>
+          Product
+          <select id="pa2Product">
+            <option value="Scotch Yoke">Scotch Yoke</option>
+            <option value="KEVA">KEVA</option>
+            <option value="Namur Cylinder">Namur Cylinder</option>
+            <option value="Automation">Automation</option>
+          </select>
+        </label>
+        <label>
+          Month
+          <input id="pa2Month" type="month" />
+        </label>
+        <label>
+          Quarter
+          <input id="pa2Quarter" type="text" readonly />
+        </label>
+        <label>
+          Annual Forecast (Cr)
+          <input id="pa2AnnualForecast" type="number" min="0" step="0.01" placeholder="0.00" />
+        </label>
+        <label>
+          Annual Actual (Cr)
+          <input id="pa2AnnualActual" type="number" min="0" step="0.01" placeholder="0.00" />
+        </label>
+        <label>
+          Plan Owner
+          <input id="pa2Owner" type="text" placeholder="Sales Engineer / Branch Manager" />
+        </label>
+      </div>
+
+      <div class="grid two" style="margin-top:10px;">
+        <label>
+          Focus / Current Status
+          <textarea id="pa2FocusStatus" rows="3" placeholder="Current project focus and status"></textarea>
+        </label>
+        <label>
+          Key Forecast Details / Next Steps
+          <textarea id="pa2NextSteps" rows="3" placeholder="Pipeline details, actions, and commitments"></textarea>
+        </label>
+      </div>
+
+      <div class="grid two" style="margin-top:10px;">
+        <label>
+          Focus Segments
+          <input id="pa2Segments" type="text" placeholder="Power | Steel | Paper" />
+        </label>
+        <label>
+          Strategy
+          <input id="pa2Strategy" type="text" placeholder="Spec development | Value engineering | Pricing" />
+        </label>
+      </div>
+
+      <div class="grid four" style="margin-top:10px;">
+        <label>
+          OEM Initiative
+          <input id="pa2Initiative" type="text" placeholder="Localization, Alternate Make Approval, Standardization" />
+        </label>
+        <label>
+          Visit Plan (Nos)
+          <input id="pa2VisitPlan" type="number" min="0" step="1" placeholder="0" />
+        </label>
+        <label>
+          Visit Done (Nos)
+          <input id="pa2VisitDone" type="number" min="0" step="1" placeholder="0" />
+        </label>
+        <label>
+          Onboarding Status
+          <select id="pa2OnboardingStatus">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="grid two" style="margin-top:10px;">
+        <label>
+          Onboarding Steps
+          <textarea id="pa2OnboardingSteps" rows="3" placeholder="Vendor registration, technical approval, trial PO, commercial closure"></textarea>
+        </label>
+        <label>
+          Action Plan by Product
+          <textarea id="pa2ActionPlan" rows="3" placeholder="Scotch Yoke: spec freeze | KEVA: demo lot | Namur Cylinder: trial run | Automation: bundle offer"></textarea>
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="btnPa2SavePlan" class="btn">Save / Update OEM Plan</button>
+        <button id="btnPa2CancelEdit" class="btn secondary">Cancel</button>
+        <button id="btnPa2ClearForm" class="btn secondary">Clear Form</button>
+        <button id="btnPa2RemovePlan" class="btn ghost">Remove Selected Plan</button>
+      </div>
+      </div>
+      <p id="pa2Status" class="status">Create a new OEM growth plan and track by region.</p>
+    </section>
+
+    <section class="card kpi-card">
+      <h2>PA2 Snapshot</h2>
+      <div class="kpis" id="pa2KpiGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2>OEM Growth Plan Review</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Region</th>
+              <th>Account Type</th>
+              <th>Key Account / OEM</th>
+              <th>Product</th>
+              <th>Month</th>
+              <th>Quarter</th>
+              <th>Annual Forecast (Cr)</th>
+              <th>Annual Actual (Cr)</th>
+              <th>Gap (Cr)</th>
+              <th>Focus / Current Status</th>
+              <th>Key Forecast Details / Next Steps</th>
+              <th>OEM Initiative</th>
+              <th>Visit Plan</th>
+              <th>Visit Done</th>
+              <th>Onboarding Status</th>
+              <th>Onboarding Steps</th>
+              <th>Action Plan by Product</th>
+              <th>Focus Segments</th>
+              <th>Strategy</th>
+              <th>Plan Owner</th>
+            </tr>
+          </thead>
+          <tbody id="pa2PlanRows"></tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:10px;">Tip: Click a row to edit. Use Add New OEM Plan to create a new entry.</p>
+    </section>
+  </main>
+
+  <script src="pa2_oem.js?v=20260711-02"></script>
+</body>
+</html>
