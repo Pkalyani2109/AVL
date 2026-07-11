@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dealer-wise Business Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Dealer-wise Business Manager</h1>
+    <p>Manage product-wise potential, forecast, actuals, and mapped key accounts for Process Automation.</p>
+    <div class="row" style="margin-top:10px;">
+      <a class="btn ghost" href="index.html">Back to Tracker Home</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="card">
+      <h2>Dealer Selection</h2>
+      <div class="grid three">
+        <label>
+          Region
+          <select id="dwRegion"></select>
+        </label>
+        <label>
+          Dealer
+          <select id="dwDealer"></select>
+        </label>
+        <label>
+          Month
+          <input id="dwMonth" type="month" />
+        </label>
+      </div>
+      <div class="grid two" style="margin-top:10px;">
+        <label>
+          Sales Engineer (Janatics)
+          <input id="dwSalesEngineer" type="text" placeholder="Enter responsible sales engineer" />
+        </label>
+        <div class="row" style="align-items:end; margin-top:0;">
+          <button id="btnDwSaveEngineer" class="btn secondary">Save Dealer Engineer Mapping</button>
+        </div>
+      </div>
+      <p id="dwContext" class="muted"></p>
+    </section>
+
+    <section class="card">
+      <h2>Product-wise Business (Dealer)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Potential</th>
+              <th>Forecast</th>
+              <th>Actual</th>
+              <th>Opp Count</th>
+            </tr>
+          </thead>
+          <tbody id="dwProductRows"></tbody>
+        </table>
+      </div>
+      <div class="row">
+        <button id="btnDwSaveProducts" class="btn">Save Product-wise Data</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Key Accounts Mapping (Process Automation)</h2>
+      <p class="muted">Accounts added here are tagged to product PA.</p>
+      <div class="grid four">
+        <label>
+          Account Name
+          <input id="dwAccountName" type="text" placeholder="Plant / OEM name" />
+        </label>
+        <label>
+          Potential
+          <input id="dwAccountPotential" type="number" min="0" step="0.01" />
+        </label>
+        <label>
+          Forecast
+          <input id="dwAccountForecast" type="number" min="0" step="0.01" />
+        </label>
+        <label>
+          Stage
+          <select id="dwAccountStage">
+            <option value="Prospect">Prospect</option>
+            <option value="Qualified">Qualified</option>
+            <option value="Proposal">Proposal</option>
+            <option value="Won">Won</option>
+            <option value="Lost">Lost</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <button id="btnDwAddAccount" class="btn secondary">Add PA Key Account</button>
+      </div>
+      <div class="table-wrap" style="margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Dealer</th>
+              <th>Sales Engineer</th>
+              <th>Account</th>
+              <th>Product</th>
+              <th>Potential</th>
+              <th>Forecast</th>
+              <th>Stage</th>
+            </tr>
+          </thead>
+          <tbody id="dwAccountRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="dealerwise.js"></script>
+</body>
+</html>
