@@ -126,18 +126,14 @@ function renderReusableAccountOptions() {
   const select = q("dwAccountSelect");
   if (!select) return;
 
-  const dealer = selectedDealer();
-  const region = selectedRegion();
   const previous = select.value;
 
   select.innerHTML = "";
   select.appendChild(opt("", "Select saved account"));
 
-  if (!dealer || !region) return;
-
   const unique = new Map();
   state.accounts
-    .filter(a => a.regionId === region.id && a.dealerId === dealer.id)
+    .filter(a => String(a.account || "").trim())
     .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))
     .forEach(a => {
       const key = (a.account || "").trim().toUpperCase();
@@ -165,15 +161,24 @@ function onReuseAccountChange() {
 
   const dealer = selectedDealer();
   const region = selectedRegion();
-  if (!dealer || !region || !accountName) return;
+  if (!accountName) return;
 
-  const latest = state.accounts
-    .filter(a =>
-      a.regionId === region.id &&
-      a.dealerId === dealer.id &&
-      String(a.account || "").trim().toUpperCase() === accountName.trim().toUpperCase()
-    )
-    .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))[0];
+  let latest = null;
+  if (dealer && region) {
+    latest = state.accounts
+      .filter(a =>
+        a.regionId === region.id &&
+        a.dealerId === dealer.id &&
+        String(a.account || "").trim().toUpperCase() === accountName.trim().toUpperCase()
+      )
+      .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))[0] || null;
+  }
+
+  if (!latest) {
+    latest = state.accounts
+      .filter(a => String(a.account || "").trim().toUpperCase() === accountName.trim().toUpperCase())
+      .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))[0] || null;
+  }
 
   if (!latest) return;
   if (q("dwAccountProduct")) q("dwAccountProduct").value = latest.product || "PA";
