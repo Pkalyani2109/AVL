@@ -416,6 +416,13 @@
       border: 1px solid var(--border);
     }
 
+    .catalog-link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
     button:hover { filter: brightness(0.96); }
 
     .helper {
@@ -639,6 +646,7 @@
               <button onclick="generatePartNumber()">Generate</button>
               <button class="secondary" onclick="copyAll()">Copy Part Number + Description</button>
               <button class="secondary" onclick="downloadResultPdf()">Download Result as PDF</button>
+              <a id="catalogDownloadBtn" class="catalog-link-btn secondary" href="../uplaods/BALL%20VALVE.pdf" download>Download Ball Valve Catalog</a>
             </div>
 
             <div id="copyStatus" class="copy-ok"></div>
@@ -1145,6 +1153,14 @@
 
     let currentGenerated = null;
     let currentCompatibilityText = "";
+    const PRODUCT_CATALOGS = {
+      ball: { label: "Ball Valve Catalog", file: "../uplaods/BALL%20VALVE.pdf" },
+      butterfly: { label: "Butterfly Valve Catalog", file: "../uplaods/butter%20fly%20valve.pdf" },
+      qta: { label: "QTA Catalog", file: "../uplaods/QTA_Catalogue.pdf" },
+      qtaAccessory: { label: "QTA Accessories Catalog", file: "../uplaods/QTA_Catalogue.pdf" },
+      pulse: { label: "Pulse Valve Catalog", file: "../uplaods/pulse%20valve.pdf" },
+      asv: { label: "Angle Seat Valve Catalog", file: "../uplaods/Angle%20Seat%20Valve.pdf" }
+    };
   const COMPATABILITY_CAUTION = "Caution: These recommendations are indicative only and cannot be guaranteed. Final material selection should be validated by engineering for actual media concentration, temperature, pressure and duty conditions.";
 
     function switchProduct(productKey) {
@@ -1160,6 +1176,16 @@
       buttons.forEach(button => {
         button.classList.toggle("active", button.dataset.product === productKey);
       });
+    }
+
+    function updateCatalogLink(productKey) {
+      const link = document.getElementById("catalogDownloadBtn");
+      if (!link) return;
+
+      const catalog = PRODUCT_CATALOGS[productKey] || PRODUCT_CATALOGS.ball;
+      link.href = catalog.file;
+      link.textContent = `Download ${catalog.label}`;
+      link.setAttribute("aria-label", `Download ${catalog.label}`);
     }
 
     function formatDropdownLabel(productKey, fieldKey, label) {
@@ -1220,6 +1246,7 @@
       if (productKey === "qtaAccessory") rebuildAccessoryModelOptions();
       handleDependencies();
       updateProductButtons(productKey);
+      updateCatalogLink(productKey);
       generatePartNumber();
     }
 
