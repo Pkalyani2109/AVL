@@ -646,7 +646,7 @@
               <button onclick="generatePartNumber()">Generate</button>
               <button class="secondary" onclick="copyAll()">Copy Part Number + Description</button>
               <button class="secondary" onclick="downloadResultPdf()">Download Result as PDF</button>
-              <a id="catalogDownloadBtn" class="catalog-link-btn secondary" href="../uplaods/BALL%20VALVE.pdf" download>Download Ball Valve Catalog</a>
+              <a id="catalogDownloadBtn" class="catalog-link-btn secondary" href="#" download>Download Ball Valve Catalog</a>
             </div>
 
             <div id="copyStatus" class="copy-ok"></div>
@@ -1154,12 +1154,12 @@
     let currentGenerated = null;
     let currentCompatibilityText = "";
     const PRODUCT_CATALOGS = {
-      ball: { label: "Ball Valve Catalog", file: "../uplaods/BALL%20VALVE.pdf" },
-      butterfly: { label: "Butterfly Valve Catalog", file: "../uplaods/butter%20fly%20valve.pdf" },
-      qta: { label: "QTA Catalog", file: "../uplaods/QTA_Catalogue.pdf" },
-      qtaAccessory: { label: "QTA Accessories Catalog", file: "../uplaods/QTA_Catalogue.pdf" },
-      pulse: { label: "Pulse Valve Catalog", file: "../uplaods/pulse%20valve.pdf" },
-      asv: { label: "Angle Seat Valve Catalog", file: "../uplaods/Angle%20Seat%20Valve.pdf" }
+      ball: { label: "Ball Valve Catalog", fileName: "BALL%20VALVE.pdf" },
+      butterfly: { label: "Butterfly Valve Catalog", fileName: "butter%20fly%20valve.pdf" },
+      qta: { label: "QTA Catalog", fileName: "QTA_Catalogue.pdf" },
+      qtaAccessory: { label: "QTA Accessories Catalog", fileName: "QTA_Catalogue.pdf" },
+      pulse: { label: "Pulse Valve Catalog", fileName: "pulse%20valve.pdf" },
+      asv: { label: "Angle Seat Valve Catalog", fileName: "Angle%20Seat%20Valve.pdf" }
     };
   const COMPATABILITY_CAUTION = "Caution: These recommendations are indicative only and cannot be guaranteed. Final material selection should be validated by engineering for actual media concentration, temperature, pressure and duty conditions.";
 
@@ -1183,9 +1183,15 @@
       if (!link) return;
 
       const catalog = PRODUCT_CATALOGS[productKey] || PRODUCT_CATALOGS.ball;
-      link.href = catalog.file;
+      link.href = catalogHref(catalog.fileName);
       link.textContent = `Download ${catalog.label}`;
       link.setAttribute("aria-label", `Download ${catalog.label}`);
+    }
+
+    function catalogHref(fileName) {
+      const path = String(window.location.pathname || "");
+      const base = path.includes("/src/") ? "../uplaods/" : "uplaods/";
+      return `${base}${fileName}`;
     }
 
     function formatDropdownLabel(productKey, fieldKey, label) {
