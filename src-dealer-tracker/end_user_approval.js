@@ -2,6 +2,7 @@ const STORAGE_KEY = "dealer-growth-tracker-v1";
 
 const state = {
   approvals: [],
+  regions: [],
   controls: {
     search: "",
     segment: "ALL",
@@ -13,6 +14,7 @@ let editingId = null;
 
 (function init() {
   hydrate();
+  populateOwnerBranchOptions();
   bindEvents();
   renderAll();
 })();
@@ -24,8 +26,37 @@ function hydrate() {
   try {
     const parsed = JSON.parse(raw);
     state.approvals = parsed.endUserApprovals || [];
+    state.regions = parsed.regions || [];
   } catch (err) {
     console.error("Failed to parse storage", err);
+  }
+}
+
+function populateOwnerBranchOptions() {
+  const sel = q("euaOwnerBranch");
+  if (!sel) return;
+
+  const fallback = [
+    "BANGALORE", "CBE 2", "CHENNAI 1", "DELHI 1", "GUJARAT", "HYDERABAD",
+    "INDORE", "KOLKATA", "MUMBAI", "MUMBAI-2", "PUNE", "TEXTILE"
+  ];
+
+  const derived = state.regions.length
+    ? state.regions.map(r => {
+      if (typeof r === "string") return r.trim();
+      return String((r && r.name) || "").trim();
+    }).filter(Boolean)
+    : [];
+
+  const branches = derived.length ? derived : fallback;
+
+  const prev = sel.value || "";
+  sel.innerHTML = `<option value="">Select Owner Branch</option>` + Array.from(new Set(branches)).sort().map(name => (
+    `<option value="${esc(name)}">${esc(name)}</option>`
+  )).join("");
+
+  if (Array.from(sel.options).some(o => o.value === prev)) {
+    sel.value = prev;
   }
 }
 
@@ -106,7 +137,7 @@ function renderTable() {
   const tbody = q("euaRows");
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="11" class="muted">No approval targets found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="muted">No approval targets found.</td></tr>`;
     return;
   }
 
@@ -116,6 +147,7 @@ function renderTable() {
       <td>${esc(r.segment)}</td>
       <td>${esc(r.name)}</td>
       <td>${esc(r.product)}</td>
+      <td>${esc(r.ownerBranch || "-")}</td>
       <td>${esc(r.startDate || "-")}</td>
       <td>${esc(r.endDate || "-")}</td>
       <td>${esc(r.milestone || "-")}</td>
@@ -144,6 +176,7 @@ function saveEntry() {
     segment: q("euaSegment").value.trim(),
     name: q("euaName").value.trim(),
     product: q("euaProduct").value,
+    ownerBranch: q("euaOwnerBranch").value,
     startDate: q("euaStartDate").value,
     endDate: q("euaEndDate").value,
     milestone: q("euaMilestone").value.trim(),
@@ -153,8 +186,8 @@ function saveEntry() {
     updatedAt: new Date().toISOString()
   };
 
-  if (!record.segment || !record.name || !record.product || !record.milestone) {
-    setStatus("Segment, Name Authority/End User, Product, and Milestone are required.", false);
+  if (!record.segment || !record.name || !record.product || !record.ownerBranch || !record.milestone) {
+    setStatus("Segment, Name Authority/End User, Product, Owner Branch, and Milestone are required.", false);
     return;
   }
 
@@ -178,9 +211,16 @@ function editEntry(id) {
   }
   q("euaName").value = rec.name || "";
   q("euaProduct").value = rec.product || "Scotch Yoke";
+  q("euaOwnerBranch").value = rec.ownerBranch || "";
+  if (!Array.from(q("euaOwnerBranch").options).some(o => o.value === q("euaOwnerBranch").value)) {
+    q("euaOwnerBranch").value = "";
+  }
   q("euaStartDate").value = rec.startDate || "";
   q("euaEndDate").value = rec.endDate || "";
   q("euaMilestone").value = rec.milestone || "";
+  if (!Array.from(q("euaMilestone").options).some(o => o.value === q("euaMilestone").value)) {
+    q("euaMilestone").value = "Other";
+  }
   q("euaRemark").value = rec.remark || "";
   q("euaNextAction").value = rec.nextAction || "";
   q("euaBudget").value = num(rec.budget);
@@ -207,6 +247,7 @@ function clearForm(showStatus = true) {
   q("euaSegment").value = "";
   q("euaName").value = "";
   q("euaProduct").value = "Scotch Yoke";
+  q("euaOwnerBranch").value = "";
   q("euaStartDate").value = "";
   q("euaEndDate").value = "";
   q("euaMilestone").value = "";
