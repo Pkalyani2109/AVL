@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>End User Approval Target List</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>End User Approval Target List</h1>
+    <p>Quick management of end-user approval targets by segment, product, dates, milestone, actions, and budget.</p>
+    <p class="muted" style="margin-top:8px; color:#e7f0fb;">Quick Navigation</p>
+    <div class="row" style="margin-top:10px;">
+      <a class="btn secondary" href="index.html">PA1 Home</a>
+      <a class="btn secondary" href="dealerwise.html">PA1 Dealer-wise</a>
+      <a class="btn secondary" href="pa2_oem.html">PA2 OEM List</a>
+      <a class="btn secondary" href="pa2_oem_manage.html">PA2 OEM Manager</a>
+      <a class="btn secondary" href="pa2_oem_detail.html">PA2 Detailed View</a>
+      <a class="btn secondary" href="end_user_approval.html">End User Approval</a>
+      <a class="btn ghost" href="../janatics_part_number_generator_all_products.html">Product Code Generator</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="card">
+      <h2>Quick Management Entry</h2>
+      <div class="grid four">
+        <label>
+          Segment
+          <select id="euaSegment">
+            <option value="">Select Segment</option>
+            <option value="Power">Power</option>
+            <option value="Steel">Steel</option>
+            <option value="Water">Water</option>
+            <option value="Oil & Gas">Oil & Gas</option>
+            <option value="Cement">Cement</option>
+            <option value="Mining">Mining</option>
+            <option value="Chemical">Chemical</option>
+            <option value="Pharma">Pharma</option>
+            <option value="Food & Beverage">Food & Beverage</option>
+            <option value="Textile">Textile</option>
+            <option value="Pulp & Paper">Pulp & Paper</option>
+            <option value="Infrastructure">Infrastructure</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label>
+          Name Authority / End User
+          <input id="euaName" type="text" placeholder="Plant / Consultant / Authority" />
+        </label>
+        <label>
+          Product
+          <select id="euaProduct">
+            <option value="Scotch Yoke">Scotch Yoke</option>
+            <option value="KEVA">KEVA</option>
+            <option value="Namur Cylinder">Namur Cylinder</option>
+            <option value="Automation">Automation</option>
+            <option value="BFV">BFV - Butterfly Valve</option>
+            <option value="BV">BV - Ball Valve</option>
+            <option value="QTA">QTA</option>
+            <option value="PV">PV - Pulse Valve</option>
+            <option value="ASV">ASV - Angle Seat Valve</option>
+          </select>
+        </label>
+        <label>
+          Milestone
+          <input id="euaMilestone" type="text" placeholder="Trial Approval / Tech Closure" />
+        </label>
+        <label>
+          Start Date
+          <input id="euaStartDate" type="date" />
+        </label>
+        <label>
+          End Date
+          <input id="euaEndDate" type="date" />
+        </label>
+        <label>
+          Budget (Lakhs)
+          <input id="euaBudget" type="number" min="0" step="0.01" placeholder="0.00" />
+        </label>
+      </div>
+
+      <div class="grid two" style="margin-top:10px;">
+        <label>
+          Remark
+          <textarea id="euaRemark" rows="2" placeholder="Approval blockers, dependency, context"></textarea>
+        </label>
+        <label>
+          Next Action
+          <textarea id="euaNextAction" rows="2" placeholder="Next meeting, drawing submission, sample dispatch"></textarea>
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="btnEuaSave" class="btn">Save / Update Entry</button>
+        <button id="btnEuaClear" class="btn secondary">Clear</button>
+      </div>
+      <p id="euaStatus" class="status">Fill details and click Save / Update Entry.</p>
+    </section>
+
+    <section class="card">
+      <h2>Approval Target List</h2>
+      <div class="grid three" style="margin-bottom:10px;">
+        <label>
+          Search
+          <input id="euaSearch" type="text" placeholder="Search by segment, name, milestone" />
+        </label>
+        <label>
+          Segment Filter
+          <select id="euaFilterSegment">
+            <option value="ALL">All Segments</option>
+          </select>
+        </label>
+        <label>
+          Product Filter
+          <select id="euaFilterProduct">
+            <option value="ALL">All Products</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Segment</th>
+              <th>Name Authority / End User</th>
+              <th>Product</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Milestone</th>
+              <th>Remark</th>
+              <th>Next Action</th>
+              <th>Budget (L)</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="euaRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="end_user_approval.js"></script>
+</body>
+</html>
