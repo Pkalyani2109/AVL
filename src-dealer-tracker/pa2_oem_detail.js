@@ -16,23 +16,38 @@ const state = {
 
 const PIE_COLORS = ["#0a5da8", "#c7922f", "#1f8f4d", "#7a4cb1", "#1b728f", "#d2691e", "#4d5b74", "#8f3b69"];
 
-(function init() {
-  hydrate();
+(async function init() {
+  await hydrate();
   bindEvents();
   populateFilterOptions();
   renderAll();
 })();
 
-function hydrate() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
+async function hydrate() {
+  const store = window.TrackerDataStore;
+  const parsed = store && typeof store.loadAll === "function"
+    ? await store.loadAll()
+    : readLocalDb();
+
+  if (!parsed || typeof parsed !== "object") return;
 
   try {
-    const parsed = JSON.parse(raw);
     state.regions = parsed.regions || [];
     state.pa2Plans = parsed.pa2Plans || [];
   } catch (err) {
     console.error("Failed to parse storage", err);
+  }
+}
+
+function readLocalDb() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_err) {
+    return {};
   }
 }
 

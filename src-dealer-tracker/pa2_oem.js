@@ -117,8 +117,8 @@ const state = {
 
 let selectedPlanId = null;
 
-(function init() {
-  hydrate();
+(async function init() {
+  await hydrate();
   ensureRegions();
   const seeded = seedPa2PlansFromReview();
   const migrated = migratePa2Plans();
@@ -132,12 +132,15 @@ let selectedPlanId = null;
   }
 })();
 
-function hydrate() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
+async function hydrate() {
+  const store = window.TrackerDataStore;
+  const parsed = store && typeof store.loadAll === "function"
+    ? await store.loadAll()
+    : readLocalDb();
+
+  if (!parsed || typeof parsed !== "object") return;
 
   try {
-    const parsed = JSON.parse(raw);
     state.regions = parsed.regions || [];
     state.pa2Plans = parsed.pa2Plans || [];
   } catch (err) {
@@ -244,20 +247,34 @@ function migratePa2Plans() {
 }
 
 function persist() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  let base = {};
+  const payload = {
+    regions: state.regions,
+    pa2Plans: state.pa2Plans
+  };
 
-  if (raw) {
-    try {
-      base = JSON.parse(raw);
-    } catch (_err) {
-      base = {};
-    }
+  const store = window.TrackerDataStore;
+  if (store && typeof store.mergeAndSave === "function") {
+    store.mergeAndSave(payload);
+    return;
   }
 
-  base.regions = state.regions;
-  base.pa2Plans = state.pa2Plans;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(base));
+  const next = {
+    ...readLocalDb(),
+    ...payload
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+}
+
+function readLocalDb() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_err) {
+    return {};
+  }
 }
 
 function bindEvents() {

@@ -15,19 +15,22 @@ const state = {
   accounts: []
 };
 
-(function init() {
-  hydrate();
+(async function init() {
+  await hydrate();
   bindEvents();
   initDefaults();
   renderSelectors();
   renderAll();
 })();
 
-function hydrate() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
+async function hydrate() {
+  const store = window.TrackerDataStore;
+  const parsed = store && typeof store.loadAll === "function"
+    ? await store.loadAll()
+    : readLocalDb();
+
+  if (!parsed || typeof parsed !== "object") return;
   try {
-    const parsed = JSON.parse(raw);
     state.regions = parsed.regions || [];
     state.dealers = parsed.dealers || [];
     state.monthly = parsed.monthly || [];
@@ -38,21 +41,36 @@ function hydrate() {
 }
 
 function persist() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  let base = {};
-  if (raw) {
-    try {
-      base = JSON.parse(raw);
-    } catch (_err) {
-      base = {};
-    }
+  const payload = {
+    regions: state.regions,
+    dealers: state.dealers,
+    monthly: state.monthly,
+    accounts: state.accounts
+  };
+
+  const store = window.TrackerDataStore;
+  if (store && typeof store.mergeAndSave === "function") {
+    store.mergeAndSave(payload);
+    return;
   }
 
-  base.regions = state.regions;
-  base.dealers = state.dealers;
-  base.monthly = state.monthly;
-  base.accounts = state.accounts;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(base));
+  const next = {
+    ...readLocalDb(),
+    ...payload
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+}
+
+function readLocalDb() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_err) {
+    return {};
+  }
 }
 
 function bindEvents() {

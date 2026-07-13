@@ -89,11 +89,12 @@ const state = {
   monthly: [],
   supports: [],
   accounts: [],
-  activities: []
+  activities: [],
+  pa2Plans: []
 };
 
-(function init() {
-  hydrate();
+(async function init() {
+  await hydrate();
   seedMasterData();
   normalizeSeedDealers();
   bindEvents();
@@ -102,11 +103,14 @@ const state = {
   loadCognitoConfig();
 })();
 
-function hydrate() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
+async function hydrate() {
+  const store = window.TrackerDataStore;
+  const parsed = store && typeof store.loadAll === "function"
+    ? await store.loadAll()
+    : readLocalDb();
+
+  if (!parsed || typeof parsed !== "object") return;
   try {
-    const parsed = JSON.parse(raw);
     Object.assign(state, parsed);
   } catch (err) {
     console.error("Failed to parse stored data", err);
@@ -114,7 +118,25 @@ function hydrate() {
 }
 
 function persist() {
+  const store = window.TrackerDataStore;
+  if (store && typeof store.mergeAndSave === "function") {
+    store.mergeAndSave(state);
+    return;
+  }
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function readLocalDb() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_err) {
+    return {};
+  }
 }
 
 function normalizeSeedDealers() {
@@ -989,6 +1011,7 @@ function csvEscape(value) {
 
 function exportLocalDbCsv() {
   const rows = [];
+  const pa2Plans = Array.isArray(state.pa2Plans) ? state.pa2Plans : [];
 
   state.regions.forEach(r => {
     rows.push(["region", r.id, r.name, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
@@ -1024,6 +1047,10 @@ function exportLocalDbCsv() {
       "activity", a.id, a.month, a.regionId, a.dealerId, "", "", "", "", "",
       "", "", "", a.visitPlan, a.visitDone, a.expoAttended, a.expoHosted, "", "", ""
     ]);
+  });
+
+  pa2Plans.forEach(p => {
+    rows.push(["pa2plan", p.id || crypto.randomUUID(), JSON.stringify(p), "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
   });
 
   const header = [
@@ -1078,7 +1105,7 @@ function importLocalDbCsv(event) {
       const lines = text.split(/\r?\n/).filter(Boolean);
       if (lines.length < 2) throw new Error("Empty CSV");
 
-      const imported = { regions: [], dealers: [], monthly: [], supports: [], accounts: [], activities: [] };
+      const imported = { regions: [], dealers: [], monthly: [], supports: [], accounts: [], activities: [], pa2Plans: [] };
       lines.slice(1).forEach(line => {
         const c = parseCsvLine(line);
         const e = c[0];
@@ -1088,6 +1115,17 @@ function importLocalDbCsv(event) {
         if (e === "support") imported.supports.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], text: c[10] });
         if (e === "account") imported.accounts.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], product: c[5], potential: num(c[6]), forecast: num(c[7]), account: c[11], stage: c[12] });
         if (e === "activity") imported.activities.push({ id: c[1], month: c[2], regionId: c[3], dealerId: c[4], visitPlan: intNum(c[13]), visitDone: intNum(c[14]), expoAttended: intNum(c[15]), expoHosted: intNum(c[16]) });
+        if (e === "pa2plan") {
+          try {
+            const parsedPlan = JSON.parse(c[2] || "{}");
+            if (parsedPlan && typeof parsedPlan === "object") {
+              if (!parsedPlan.id) parsedPlan.id = c[1] || crypto.randomUUID();
+              imported.pa2Plans.push(parsedPlan);
+            }
+          } catch (_err) {
+            // Skip malformed PA2 plan rows to keep import resilient.
+          }
+        }
       });
 
       state.regions = imported.regions;
@@ -1096,6 +1134,7 @@ function importLocalDbCsv(event) {
       state.supports = imported.supports;
       state.accounts = imported.accounts;
       state.activities = imported.activities;
+      state.pa2Plans = imported.pa2Plans;
 
       persist();
       ensureDefaults();
