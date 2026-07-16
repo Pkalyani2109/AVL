@@ -1,0 +1,17 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/janatics"
+  to = "/src/janatics_part_number_generator_all_products.html"
+  status = 200
+
+[[redirects]]
+  from = "/dealer"
+  to = "/src-dealer-tracker/index.html"
+  status = 200
