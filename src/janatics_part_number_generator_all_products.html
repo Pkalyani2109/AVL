@@ -3560,7 +3560,7 @@
       return match ? match[1] : "";
     }
 
-    function getSingleActingSizingData(row, requiredTorque) {
+    function getSingleActingSizingData(row, referenceTorque) {
       const size = actuatorSizeCode(row.qtaSr);
       const srMap = QTA_SR_TORQUE_4BAR[size] || {};
       let usedSpring = row.srSpring;
@@ -3587,11 +3587,11 @@
       if (!srRow) return null;
       const star5 = srRow[0] * 1.25;
       const end5 = srRow[1] * 1.25;
-      const fosSpring = star5 / requiredTorque;
-      const fosEnd = end5 / requiredTorque;
+      const fosSpring = star5 / referenceTorque;
+      const fosEnd = end5 / referenceTorque;
       const fos = Math.min(fosSpring, fosEnd);
-      const startPass = star5 > requiredTorque;
-      const endPass = end5 >= requiredTorque;
+      const startPass = star5 > referenceTorque;
+      const endPass = end5 >= referenceTorque;
       const springNote = usedSpring === row.srSpring
         ? `${usedSpring} SPRING`
         : `${row.srSpring} SPRING requested; ${usedSpring} SPRING used for torque interpolation`;
@@ -3604,14 +3604,13 @@
       if (!row) return null;
 
       const valveTorque = Number(row.valveTorque);
-      const requiredTorque = Number(row.requiredTorque);
       if (!Number.isFinite(valveTorque) || valveTorque <= 0) return null;
 
       if (values.actuation === "3") {
         const size = actuatorSizeCode(row.qtaDa);
         const torqueAt4Bar = Number(QTA_DA_TORQUE_4BAR[size]);
         const torqueAt5Bar = torqueAt4Bar * 1.25;
-        const fos = torqueAt5Bar / requiredTorque;
+        const fos = torqueAt5Bar / valveTorque;
         return {
           actuationLabel: "Pneumatic - Double Acting",
           productLabel: "Ball Valve",
@@ -3620,12 +3619,12 @@
           valveTorque,
           torqueText: `Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm (from 4 bar catalogue torque x 1.25)`,
           fos,
-          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm, Required torque (x1.3): ${formatNm(requiredTorque)} Nm`
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm`
         };
       }
 
       if (values.actuation === "2") {
-        const sa = getSingleActingSizingData(row, requiredTorque);
+        const sa = getSingleActingSizingData(row, valveTorque);
         if (!sa) return null;
         return {
           actuationLabel: "Pneumatic - Single Acting",
@@ -3633,16 +3632,16 @@
           model: `${row.qtaSr} / ${sa.springNote}`,
           valveSize: row.valveSize,
           valveTorque,
-          torqueText: `Output Torque @ 5 bar: Start ${formatNm(sa.star5)} Nm / End ${formatNm(sa.end5)} Nm`,
+          torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} Nm / Spring End ${formatNm(sa.end5)} Nm`,
           fos: sa.fos,
-          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm, Required torque (x1.3): ${formatNm(requiredTorque)} Nm | SA check: Start ${formatNm(sa.star5)} > ${formatNm(requiredTorque)} (${sa.startPass ? "PASS" : "FAIL"}), End ${formatNm(sa.end5)} >= ${formatNm(requiredTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | FOS: Spring ${formatFos(sa.fosSpring)}, End ${formatFos(sa.fosEnd)} (governing/min ${formatFos(sa.fos)})`
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} > ${formatNm(valveTorque)} (${sa.startPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.end5)} >= ${formatNm(valveTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | Resultant FOS: Pneumatic Start ${formatFos(sa.fosSpring)}, Spring End ${formatFos(sa.fosEnd)}; Governing/Minimum ${formatFos(sa.fos)}`
         };
       }
 
       if (values.actuation === "4") {
         const eqta = getEqtaSelections();
         const actuatorTorque = Number(row.eqtaTorqueNm);
-        const fos = actuatorTorque / requiredTorque;
+        const fos = actuatorTorque / valveTorque;
         const phaseText = eqta.phaseLabel ? ` | ${eqta.phaseLabel}` : "";
         return {
           actuationLabel: "Electrical - ON/OFF",
@@ -3652,7 +3651,7 @@
           valveTorque,
           torqueText: `Output Torque basis: ${formatNm(actuatorTorque)} Nm (electric actuator rated torque)`,
           fos,
-          meta: `${row.eqtaPartNumber} | ${row.eqtaDescription} | ${eqta.voltageLabel}${phaseText} | ${eqta.handwheelLabel} | Required torque (x1.3): ${formatNm(requiredTorque)} Nm`
+          meta: `${row.eqtaPartNumber} | ${row.eqtaDescription} | ${eqta.voltageLabel}${phaseText} | ${eqta.handwheelLabel} | Valve torque basis: ${formatNm(valveTorque)} Nm`
         };
       }
 
@@ -3683,8 +3682,7 @@
       }
 
       if (values.actuation === "2") {
-        const requiredTorque = valveTorque * 1.3;
-        const sa = getSingleActingSizingData(row, requiredTorque);
+        const sa = getSingleActingSizingData(row, valveTorque);
         if (!sa) return null;
         return {
           actuationLabel: "Pneumatic - Single Acting",
@@ -3692,9 +3690,9 @@
           model: `${row.qtaSr} / ${sa.springNote}`,
           valveSize: row.valveSize,
           valveTorque,
-          torqueText: `Output Torque @ 5 bar: Start ${formatNm(sa.star5)} Nm / End ${formatNm(sa.end5)} Nm`,
+          torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} Nm / Spring End ${formatNm(sa.end5)} Nm`,
           fos: sa.fos,
-          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm, Required torque (x1.3): ${formatNm(requiredTorque)} Nm | SA check: Start ${formatNm(sa.star5)} > ${formatNm(requiredTorque)} (${sa.startPass ? "PASS" : "FAIL"}), End ${formatNm(sa.end5)} >= ${formatNm(requiredTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | FOS: Spring ${formatFos(sa.fosSpring)}, End ${formatFos(sa.fosEnd)} (governing/min ${formatFos(sa.fos)})`
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} > ${formatNm(valveTorque)} (${sa.startPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.end5)} >= ${formatNm(valveTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | Resultant FOS: Pneumatic Start ${formatFos(sa.fosSpring)}, Spring End ${formatFos(sa.fosEnd)}; Governing/Minimum ${formatFos(sa.fos)}`
         };
       }
 
