@@ -196,8 +196,19 @@
       }
 
       .product-buttons button,
-      .button-row button {
+      .button-row button,
+      .button-row a {
         flex: 1 1 100%;
+      }
+
+      .button-row {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group.secondary-actions {
+        padding: 0;
+        border: 0;
+        background: transparent;
       }
     }
 
@@ -394,20 +405,72 @@
     }
 
     .button-row {
+      display: block;
+      margin-top: 10px;
+      align-items: stretch;
+    }
+
+    .button-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 16px;
+      gap: 6px;
+    }
+
+    .button-group.primary-actions button {
+      width: 100%;
+      min-height: 42px;
+      box-shadow: 0 10px 24px rgba(0, 137, 201, 0.18);
+    }
+
+    .button-group.secondary-actions {
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f8fbfe;
+    }
+
+    .button-group.secondary-actions > * {
+      flex: 1 1 170px;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 36px;
+      width: 100%;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      min-width: 16px;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .btn-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     button {
       border: 0;
       background: var(--janatics-blue);
       color: white;
-      padding: 11px 14px;
-      border-radius: 10px;
+      padding: 8px 11px;
+      border-radius: 9px;
       font-weight: 800;
       cursor: pointer;
+      line-height: 1.15;
+      min-height: 36px;
+      font-size: 13px;
     }
 
     button.secondary {
@@ -421,6 +484,20 @@
       align-items: center;
       justify-content: center;
       text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #fdf7e8, #f7edd2);
+      border: 1px solid #e9d5a1;
+      color: #6b4f00;
+      font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+    }
+
+    .catalog-link-btn:hover {
+      filter: none;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(107, 79, 0, 0.12);
     }
 
     button:hover { filter: brightness(0.96); }
@@ -785,12 +862,13 @@
             </section>
 
             <div class="button-row">
-              <button onclick="generatePartNumber()">Generate</button>
-              <button class="secondary" onclick="copyAll()">Copy Part Number + Description</button>
-              <button class="secondary" onclick="downloadResultPdf()">Download Result as PDF</button>
-              <button class="secondary" onclick="downloadTechnicalDatasheetPdf()">Download Technical Datasheet PDF</button>
-              <button class="secondary" onclick="showGaDrawingComingSoon()">Download GA Drawing PDF (Coming Soon)</button>
-              <a id="catalogDownloadBtn" class="catalog-link-btn secondary" href="#" download>Download Ball Valve Catalog</a>
+              <div class="button-group secondary-actions">
+                <button class="secondary action-btn" onclick="copyAll()"><span class="btn-icon" aria-hidden="true">&#128203;</span><span class="btn-label">Copy Code + Description</span></button>
+                <button class="secondary action-btn" onclick="downloadResultPdf()"><span class="btn-icon" aria-hidden="true">&#11123;</span><span class="btn-label">Result PDF</span></button>
+                <button class="secondary action-btn" onclick="downloadTechnicalDatasheetPdf()"><span class="btn-icon" aria-hidden="true">&#128196;</span><span class="btn-label">Technical Datasheet</span></button>
+                <button class="secondary action-btn" onclick="showGaDrawingComingSoon()"><span class="btn-icon" aria-hidden="true">&#128208;</span><span class="btn-label">GA Drawing PDF</span></button>
+                <a id="catalogDownloadBtn" class="catalog-link-btn secondary action-btn" href="#" download><span class="btn-icon" aria-hidden="true">&#128214;</span><span class="btn-label">Catalog</span></a>
+              </div>
             </div>
 
             <div id="copyStatus" class="copy-ok"></div>
