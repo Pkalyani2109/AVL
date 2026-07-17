@@ -1203,12 +1203,12 @@
       { code: "1|63", dnCode: "1", portCode: "63", label: "DN15 / G1/2 inch" },
       { code: "2|64", dnCode: "2", portCode: "64", label: "DN20 / G3/4 inch" },
       { code: "3|65", dnCode: "3", portCode: "65", label: "DN25 / G1 inch" },
-      { code: "4|66", dnCode: "4", portCode: "66", label: "DN32 / G1 1/4 inch" },
-      { code: "5|67", dnCode: "5", portCode: "67", label: "DN40 / G1 1/2 inch" },
-      { code: "6|68", dnCode: "6", portCode: "68", label: "DN50 / G2 inch" },
-      { code: "7|69", dnCode: "7", portCode: "69", label: "DN65 / G2 1/2 inch" },
-      { code: "8|70", dnCode: "8", portCode: "70", label: "DN80 / G3 inch" },
-      { code: "9|71", dnCode: "9", portCode: "71", label: "DN100 / G4 inch" }
+      { code: "4|67", dnCode: "4", portCode: "67", label: "DN32 / G1 1/4 inch" },
+      { code: "5|69", dnCode: "5", portCode: "69", label: "DN40 / G1 1/2 inch" },
+      { code: "6|76", dnCode: "6", portCode: "76", label: "DN50 / G2 inch" },
+      { code: "7|77", dnCode: "7", portCode: "77", label: "DN65 / G2 1/2 inch" },
+      { code: "8|78", dnCode: "8", portCode: "78", label: "DN80 / G3 inch" },
+      { code: "9|80", dnCode: "9", portCode: "80", label: "DN100 / G4 inch" }
     ];
 
     const ASV_ACTUATOR_BY_DN = {
@@ -1270,7 +1270,7 @@
         },
         allowedConnectionByConstruction: {
           "1": ["1"],
-          "2": ["2", "3"],
+          "2": ["1", "2", "3"],
           "3": ["1"]
         },
         allowedPortByConstructionAndConnection: {
@@ -1278,7 +1278,8 @@
             "1": ["63", "64", "65", "69", "76", "77", "78", "80"]
           },
           "2": {
-            "2": ["63", "64", "65", "67", "69", "76"],
+            "1": ["63", "64", "65", "67", "69", "76", "77", "78", "80"],
+            "2": ["63", "64", "65", "67", "69", "76", "77", "78", "80"],
             "3": ["63", "64", "65", "67", "69", "76"]
           },
           "3": {
@@ -3088,7 +3089,7 @@
         "06": ["05", "06", "08", "10", "12", "14"],
         "07": ["06", "08", "10", "12", "14", "18"],
         "08": ["05", "06", "08"],
-        "09": ["06", "08"],
+        "09": ["06", "10", "12"],
         "10": ["06", "08"]
       };
 
@@ -3213,7 +3214,7 @@
           "06": ["05", "06", "08", "10", "12", "14"],
           "07": ["06", "08", "10", "12", "14", "18"],
           "08": ["05", "06", "08"],
-          "09": ["06", "08"],
+          "09": ["06", "10", "12"],
           "10": ["06", "08"]
         };
 
@@ -3249,7 +3250,7 @@
       let fullDescription = "";
       if (productKey === "ball" || productKey === "butterfly") {
         const fieldCodes = product.fields.map(field => values[field.key]);
-        compactCode = product.model.code + fieldCodes.join("");
+        compactCode = `${product.model.code}${fieldCodes.slice(0, -1).join("")}-${fieldCodes[fieldCodes.length - 1]}`;
         readableCode = product.model.code + "-" + fieldCodes.join("-");
 
         const port = selectedOption(productKey, "port", values.port);
@@ -5217,7 +5218,7 @@
 
       if (productKey === "ball" || productKey === "butterfly") {
         const fieldCodes = product.fields.map(field => values[field.key]);
-        compactCode = product.model.code + fieldCodes.join("");
+        compactCode = `${product.model.code}${fieldCodes.slice(0, -1).join("")}-${fieldCodes[fieldCodes.length - 1]}`;
         readableCode = product.model.code + "-" + fieldCodes.join("-");
 
         const port = selectedOption(productKey, "port", values.port);
