@@ -2954,6 +2954,14 @@
           select.appendChild(option);
         });
 
+        if (productKey === "asv" && field.key === "actuator") {
+          const blankOption = document.createElement("option");
+          blankOption.value = "";
+          blankOption.textContent = "-- Select actuator size --";
+          select.insertBefore(blankOption, select.firstChild);
+          select.value = "";
+        }
+
         wrapper.appendChild(label);
         wrapper.appendChild(select);
 
@@ -3228,6 +3236,7 @@
         if (values.connection === "2") notes.push("Flanged ASV: confirm flange standard, pressure class and face-to-face before release.");
         if (values.connection === "3") notes.push("TC-End ASV: confirm tri-clamp standard and gasket requirement.");
         if (["4","5","6","8"].includes(values.bodyConfig)) notes.push("FKM seal configuration selected; confirm medium temperature and compatibility.");
+        if (!values.actuator) errors.push("Select ASV actuator size.");
       }
 
       if ((productKey === "ball" || productKey === "butterfly") && values.actuation === "2") {
@@ -3338,11 +3347,13 @@
         const actuator = selectedOption(productKey, "actuator", values.actuator);
         const size = selectedOption(productKey, "size", values.size);
         const connection = selectedOption(productKey, "connection", values.connection);
+        const actuatorCode = values.actuator || "";
+        const actuatorLabel = actuator ? actuator.label : "Not selected";
 
-        compactCode = `ASV${values.type}${values.bodyConfig}${values.actuator}${size.dnCode}${size.portCode}${values.connection}`;
-        readableCode = `ASV-${values.type}-${values.bodyConfig}-${values.actuator}-${size.dnCode}-${size.portCode}-${values.connection}`;
-        briefDescription = `Angle Seat Valve, ${type.label}, ${bodyConfig.label}, Actuator ${actuator.label}, ${size.label}, ${connection.label}`;
-        fullDescription = `Janatics Angle Seat Valve; ${type.label}; ${bodyConfig.label}; Actuator Size: ${actuator.label}; Size: ${size.label}; Connection: ${connection.label}; 2-way pneumatic piston valve for liquid and utility service with high flow efficiency and low pressure loss.`;
+        compactCode = `ASV${values.type}${values.bodyConfig}${actuatorCode}${size.dnCode}${size.portCode}${values.connection}`;
+        readableCode = `ASV-${values.type}-${values.bodyConfig}-${actuatorCode}-${size.dnCode}-${size.portCode}-${values.connection}`;
+        briefDescription = `Angle Seat Valve, ${type.label}, ${bodyConfig.label}, Actuator ${actuatorLabel}, ${size.label}, ${connection.label}`;
+        fullDescription = `Janatics Angle Seat Valve; ${type.label}; ${bodyConfig.label}; Actuator Size: ${actuatorLabel}; Size: ${size.label}; Connection: ${connection.label}; 2-way pneumatic piston valve for liquid and utility service with high flow efficiency and low pressure loss.`;
       }
 
       const displayedCode = readableCode;
@@ -3821,7 +3832,7 @@
       if (productKey === "asv") {
         addBreakdownRow("Type", values.type, selectedOption(productKey, "type", values.type).label);
         addBreakdownRow("Body / Actuator / Seal", values.bodyConfig, selectedOption(productKey, "bodyConfig", values.bodyConfig).label);
-        addBreakdownRow("Actuator Size", values.actuator, selectedOption(productKey, "actuator", values.actuator).label);
+        addBreakdownRow("Actuator Size", values.actuator || "-", pickFieldLabel(productKey, "actuator", values.actuator) || "Not selected");
         const size = selectedOption(productKey, "size", values.size);
         addBreakdownRow("DN", size.dnCode, size.label.split(" / ")[0]);
         addBreakdownRow("Port Size", size.portCode, size.label.split(" / ")[1]);
@@ -4160,12 +4171,17 @@
 
       const allowedActuators = new Set(getAsvAllowedActuatorCodes({ size: sizeSelect.value }));
       Array.from(actuatorSelect.options).forEach(option => {
+        if (option.value === "") {
+          option.disabled = false;
+          option.hidden = false;
+          return;
+        }
         const allowed = allowedActuators.has(option.value);
         option.disabled = !allowed;
         option.hidden = !allowed;
       });
 
-      if (!allowedActuators.has(actuatorSelect.value)) {
+      if (actuatorSelect.value !== "" && !allowedActuators.has(actuatorSelect.value)) {
         actuatorSelect.value = Array.from(allowedActuators)[0] || "";
       }
     }
@@ -5277,9 +5293,10 @@
 
       if (productKey === "asv") {
         const size = selectedOption(productKey, "size", values.size);
-        compactCode = `ASV${values.type}${values.bodyConfig}${values.actuator}${size.dnCode}${size.portCode}${values.connection}`;
-        readableCode = `ASV-${values.type}-${values.bodyConfig}-${values.actuator}-${size.dnCode}-${size.portCode}-${values.connection}`;
-        description = `Janatics Angle Seat Valve; ${selectedOption(productKey, "type", values.type).label}; ${selectedOption(productKey, "bodyConfig", values.bodyConfig).label}; Actuator Size: ${selectedOption(productKey, "actuator", values.actuator).label}; Size: ${size.label}; Connection: ${selectedOption(productKey, "connection", values.connection).label}.`;
+        const actuatorLabel = pickFieldLabel(productKey, "actuator", values.actuator) || "Not selected";
+        compactCode = `ASV${values.type}${values.bodyConfig}${values.actuator || ""}${size.dnCode}${size.portCode}${values.connection}`;
+        readableCode = `ASV-${values.type}-${values.bodyConfig}-${values.actuator || ""}-${size.dnCode}-${size.portCode}-${values.connection}`;
+        description = `Janatics Angle Seat Valve; ${selectedOption(productKey, "type", values.type).label}; ${selectedOption(productKey, "bodyConfig", values.bodyConfig).label}; Actuator Size: ${actuatorLabel}; Size: ${size.label}; Connection: ${selectedOption(productKey, "connection", values.connection).label}.`;
       }
 
       return {
