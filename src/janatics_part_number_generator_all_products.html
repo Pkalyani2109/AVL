@@ -3921,8 +3921,7 @@
         const fallbackText = [
           "Janatics Product Part Number Result",
           "",
-          "Part Number: " + currentGenerated.displayedCode,
-          "Compact / Catalogue Code: " + currentGenerated.compactCode,
+          "Part Number / Catalogue Code: " + currentGenerated.compactCode,
           "Description: " + currentGenerated.fullDescription,
           "Chemical Compatability: " + (currentCompatibilityText || "Not checked."),
           "Chemical Compatability Caution: " + COMPATABILITY_CAUTION,
@@ -4048,8 +4047,7 @@
       drawHeader();
       const compatibilityPdfText = String(currentCompatibilityText || "Not checked.").replaceAll(" | ", "\n");
       const valveSizingPdfText = getValveSizingPdfText();
-      drawSection("Part Number", currentGenerated.displayedCode, false);
-      drawSection("Compact / Catalogue Code", currentGenerated.compactCode, false);
+      drawSection("Part Number / Catalogue Code", currentGenerated.compactCode, false);
       drawSection("Description", currentGenerated.fullDescription, false);
       if (valveSizingPdfText) {
         drawSection("Valve Actuator Sizing", valveSizingPdfText, false);
