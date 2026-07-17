@@ -835,12 +835,7 @@
           <div id="statusBox" class="status warning">Select configuration to generate part number.</div>
 
           <div class="result-box">
-            <small>Part Number</small>
-            <div id="partNumber" class="part-number">-</div>
-          </div>
-
-          <div class="result-box">
-            <small>Compact / Catalogue Code</small>
+            <small>Part Number / Catalogue Code</small>
             <div id="compactNumber" class="part-number">-</div>
           </div>
 
@@ -3369,7 +3364,8 @@
         errors: validation.errors
       };
 
-      document.getElementById("partNumber").textContent = displayedCode;
+      const partNumberBox = document.getElementById("partNumber");
+      if (partNumberBox) partNumberBox.textContent = displayedCode;
       document.getElementById("compactNumber").textContent = compactCode;
       document.getElementById("fullDescription").textContent = fullDescription;
 
