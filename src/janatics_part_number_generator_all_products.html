@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Janatics Process Automation Product Selection Guide</title>
 
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('view') === 'standalone') {
+        document.documentElement.classList.add('janatics-standalone');
+      }
+    })();
+  </script>
+
   <style>
     :root {
       --janatics-blue: #0089c9;
@@ -72,6 +81,10 @@
 
     .header-nav a:hover {
       background: rgba(255, 255, 255, 0.24);
+    }
+
+    .janatics-standalone .header-nav {
+      display: none;
     }
 
     .product-banner {
