@@ -3610,6 +3610,7 @@
         const size = actuatorSizeCode(row.qtaDa);
         const torqueAt4Bar = Number(QTA_DA_TORQUE_4BAR[size]);
         const torqueAt5Bar = torqueAt4Bar * 1.25;
+        const fos4Bar = torqueAt4Bar / valveTorque;
         const fos = torqueAt5Bar / valveTorque;
         return {
           actuationLabel: "Pneumatic - Double Acting",
@@ -3617,9 +3618,9 @@
           model: row.qtaDa,
           valveSize: row.valveSize,
           valveTorque,
-          torqueText: `Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm (from 4 bar catalogue torque x 1.25)`,
+          torqueText: `Output Torque @ 4 bar: ${formatNm(torqueAt4Bar)} Nm | FOS @ 4 bar: ${formatFos(fos4Bar)} | Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm | FOS @ 5 bar: ${formatFos(fos)}`,
           fos,
-          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm`
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | 4 bar FOS ${formatFos(fos4Bar)} | 5 bar FOS ${formatFos(fos)}`
         };
       }
 
@@ -3669,15 +3670,16 @@
         const size = actuatorSizeCode(row.qtaDa);
         const torqueAt4Bar = Number(QTA_DA_TORQUE_4BAR[size]);
         const torqueAt5Bar = torqueAt4Bar * 1.25;
+        const fos4Bar = torqueAt4Bar / valveTorque;
         const fos = torqueAt5Bar / valveTorque;
         return {
           actuationLabel: "Pneumatic - Double Acting",
           model: row.qtaDa,
           valveSize: row.valveSize,
           valveTorque,
-          torqueText: `Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm (from 4 bar catalogue torque x 1.25)`,
+          torqueText: `Output Torque @ 4 bar: ${formatNm(torqueAt4Bar)} Nm | FOS @ 4 bar: ${formatFos(fos4Bar)} | Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm | FOS @ 5 bar: ${formatFos(fos)}`,
           fos,
-          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm`
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | 4 bar FOS ${formatFos(fos4Bar)} | 5 bar FOS ${formatFos(fos)}`
         };
       }
 
