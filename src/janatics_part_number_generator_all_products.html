@@ -3335,7 +3335,7 @@
         const seal = selectedOption(productKey, "seal", values.seal);
         const voltage = selectedOption(productKey, "voltage", values.voltage);
 
-        compactCode = `PV${values.bodyType}${values.port}${values.seal}${values.voltage}`;
+        compactCode = `PV${values.bodyType}${values.port}${values.seal}-${values.voltage}`;
         readableCode = `PV-${values.bodyType}-${values.port}-${values.seal}-${values.voltage}`;
         briefDescription = `Pulse Valve, ${bodyType.label}, ${port.label}, ${seal.label} Seal, ${voltage.label}`;
         fullDescription = `Janatics Pulse Valve; ${bodyType.label}; Port Size: ${port.label}; Seal: ${seal.label}; Voltage: ${voltage.label}; 2/2 Normally Closed; suitable for dust collector filter cleaning using short high-pressure compressed air pulse.`;
@@ -4211,6 +4211,15 @@
       }
 
       filterAsvActuatorOptions();
+
+      if (changedField === "size") {
+        const actuatorSelect = document.getElementById("field_actuator");
+        if (actuatorSelect && !actuatorSelect.value) {
+          const firstAllowedActuator = Array.from(actuatorSelect.options).find(option => option.value && !option.disabled && !option.hidden);
+          actuatorSelect.value = firstAllowedActuator ? firstAllowedActuator.value : "";
+        }
+      }
+
       filterAsvSizeOptions();
     }
 
@@ -5286,7 +5295,7 @@
       }
 
       if (productKey === "pulse") {
-        compactCode = `PV${values.bodyType}${values.port}${values.seal}${values.voltage}`;
+        compactCode = `PV${values.bodyType}${values.port}${values.seal}-${values.voltage}`;
         readableCode = `PV-${values.bodyType}-${values.port}-${values.seal}-${values.voltage}`;
         description = `Janatics Pulse Valve; ${selectedOption(productKey, "bodyType", values.bodyType).label}; Port Size: ${selectedOption(productKey, "port", values.port).label}; Seal: ${selectedOption(productKey, "seal", values.seal).label}; Voltage: ${selectedOption(productKey, "voltage", values.voltage).label}.`;
       }
