@@ -2938,7 +2938,7 @@
         const select = document.createElement("select");
         select.id = "field_" + field.key;
         select.onchange = function () {
-          handleDependencies();
+          handleDependencies(field.key);
           generatePartNumber();
         };
 
@@ -2985,12 +2985,12 @@
       return MASTER[productKey].fields.find(item => item.key === fieldKey).options;
     }
 
-    function handleDependencies() {
+    function handleDependencies(changedField) {
       const productKey = document.getElementById("productType").value;
       if (productKey === "ball") filterBallOptions();
       if (productKey === "pulse") filterPulsePorts();
       if (productKey === "qta") filterQtaOptions();
-      if (productKey === "asv") filterAsvActuatorOptions();
+      if (productKey === "asv") filterAsvDependencies(changedField);
       if (productKey === "qtaAccessory") rebuildAccessoryModelOptions();
       toggleEqtaOptions();
     }
@@ -4138,6 +4138,14 @@
       return ASV_ACTUATOR_BY_DN[size.dnCode] || ["1", "2", "3", "4"];
     }
 
+    function getAsvAllowedSizeCodes(values) {
+      const actuatorCode = String(values.actuator || "");
+      if (!actuatorCode) return SIZE_ASV.map(item => item.code);
+      return SIZE_ASV
+        .filter(item => (ASV_ACTUATOR_BY_DN[item.dnCode] || []).includes(actuatorCode))
+        .map(item => item.code);
+    }
+
     function getAsvActuatorHint(values) {
       const allowedActuators = getAsvAllowedActuatorCodes(values);
       const allowedLabels = allowedActuators.map(code => ASV_ACTUATOR_HINT[code]).filter(Boolean);
@@ -4160,6 +4168,34 @@
       if (!allowedActuators.has(actuatorSelect.value)) {
         actuatorSelect.value = Array.from(allowedActuators)[0] || "";
       }
+    }
+
+    function filterAsvSizeOptions() {
+      const actuatorSelect = document.getElementById("field_actuator");
+      const sizeSelect = document.getElementById("field_size");
+      if (!actuatorSelect || !sizeSelect) return;
+
+      const allowedSizes = new Set(getAsvAllowedSizeCodes({ actuator: actuatorSelect.value }));
+      Array.from(sizeSelect.options).forEach(option => {
+        const allowed = allowedSizes.has(option.value);
+        option.disabled = !allowed;
+        option.hidden = !allowed;
+      });
+
+      if (!allowedSizes.has(sizeSelect.value)) {
+        sizeSelect.value = Array.from(allowedSizes)[0] || "";
+      }
+    }
+
+    function filterAsvDependencies(changedField) {
+      if (changedField === "actuator") {
+        filterAsvSizeOptions();
+        filterAsvActuatorOptions();
+        return;
+      }
+
+      filterAsvActuatorOptions();
+      filterAsvSizeOptions();
     }
 
     function getPulseSealTemperatureBand(sealCode) {
