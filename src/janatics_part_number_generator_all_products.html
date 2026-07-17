@@ -1211,6 +1211,25 @@
       { code: "9|71", dnCode: "9", portCode: "71", label: "DN100 / G4 inch" }
     ];
 
+    const ASV_ACTUATOR_BY_DN = {
+      "1": ["1"],
+      "2": ["1"],
+      "3": ["1"],
+      "4": ["2"],
+      "5": ["2"],
+      "6": ["2"],
+      "7": ["3"],
+      "8": ["4"],
+      "9": ["4"]
+    };
+
+    const ASV_ACTUATOR_HINT = {
+      "1": "50 mm actuator up to DN25 / G1 inch",
+      "2": "63 mm actuator for DN32 to DN50 / G1 1/4 to G2 inch",
+      "3": "80 mm actuator for DN65 / G2 1/2 inch",
+      "4": "100 mm actuator for DN80 to DN100 / G3 to G4 inch"
+    };
+
     const MASTER = {
       ball: {
         kind: "ball",
@@ -2937,11 +2956,12 @@
         wrapper.appendChild(label);
         wrapper.appendChild(select);
 
-        if (["port","spring","size"].includes(field.key)) {
+        if (["port","spring","size","actuator"].includes(field.key)) {
           const helper = document.createElement("div");
           helper.className = "helper";
           if (field.key === "spring") helper.textContent = "Spring options are filtered by QTA function and actuator size.";
           else if (field.key === "size" && productKey === "asv") helper.textContent = "ASV size selection automatically carries both DN code and port-size code.";
+          else if (field.key === "actuator" && productKey === "asv") helper.textContent = "ASV actuator size depends on the selected valve size: 50 mm up to DN25, 63 mm for DN32 to DN50, 80 mm for DN65, and 100 mm for DN80 to DN100.";
           else helper.textContent = "Size is filtered for valid available combinations.";
           wrapper.appendChild(helper);
         }
@@ -2969,6 +2989,7 @@
       if (productKey === "ball") filterBallOptions();
       if (productKey === "pulse") filterPulsePorts();
       if (productKey === "qta") filterQtaOptions();
+      if (productKey === "asv") filterAsvActuatorOptions();
       if (productKey === "qtaAccessory") rebuildAccessoryModelOptions();
       toggleEqtaOptions();
     }
@@ -4110,6 +4131,36 @@
       return "PTFE, NBR & FKM";
     }
 
+    function getAsvAllowedActuatorCodes(values) {
+      const size = selectedOption("asv", "size", values.size);
+      if (!size || !size.dnCode) return ["1", "2", "3", "4"];
+      return ASV_ACTUATOR_BY_DN[size.dnCode] || ["1", "2", "3", "4"];
+    }
+
+    function getAsvActuatorHint(values) {
+      const allowedActuators = getAsvAllowedActuatorCodes(values);
+      const allowedLabels = allowedActuators.map(code => ASV_ACTUATOR_HINT[code]).filter(Boolean);
+      if (!allowedLabels.length) return "Select the ASV size to see the actuator limit.";
+      return `Actuator dependency: ${allowedLabels.join(" | ")}`;
+    }
+
+    function filterAsvActuatorOptions() {
+      const actuatorSelect = document.getElementById("field_actuator");
+      const sizeSelect = document.getElementById("field_size");
+      if (!actuatorSelect || !sizeSelect) return;
+
+      const allowedActuators = new Set(getAsvAllowedActuatorCodes({ size: sizeSelect.value }));
+      Array.from(actuatorSelect.options).forEach(option => {
+        const allowed = allowedActuators.has(option.value);
+        option.disabled = !allowed;
+        option.hidden = !allowed;
+      });
+
+      if (!allowedActuators.has(actuatorSelect.value)) {
+        actuatorSelect.value = Array.from(allowedActuators)[0] || "";
+      }
+    }
+
     function getPulseSealTemperatureBand(sealCode) {
       if (sealCode === "N") return "-5 C to +80 C (NBR)";
       if (sealCode === "E") return "-30 C to +130 C (EPDM)";
@@ -4354,6 +4405,7 @@
         addRow("Available Port Size", extractAsvPort(values));
         addRow("Orifice Size (mm)", getAsvOrificeByValues(values));
         addRow("Actuator Dia (mm)", pickFieldLabel(productKey, "actuator", values.actuator));
+        addRow("Actuator dependency", getAsvActuatorHint(values));
         addRow("External Pilot Port size", isAsvPlasticActuator(values) ? "Plastic - G1/4" : "SS - G1/8");
         addRow("Working Pressure Range", "0 to 16 bar");
         addRow("External Pilot Pr. Range", "3 to 7 bar");
