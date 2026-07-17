@@ -994,9 +994,9 @@
 
   </main>
 
-  <script src="vendor/three/three.min.js"></script>
-  <script src="vendor/three/OrbitControls.js"></script>
-  <script src="vendor/three/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../src-dealer-tracker/supabase-config.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -3273,12 +3273,16 @@
         const temperature = selectedOption(productKey, "temperature", values.temperature);
         const variable = selectedOption(productKey, "variable", values.variable);
         const torque = getQtaTorqueText(values);
+        const dimension = QTA_DIMENSIONS.find(item => item.size === values.size);
+        const dimensionText = dimension
+          ? `Actuator dimensions: M ${dimension.m}, N ${dimension.n}, Z ${dimension.z}, PDC I ${dimension.i}, PDC J ${dimension.j}, Port ${dimension.port}, Flange ${dimension.flange}`
+          : "Actuator dimensions: not available for the selected size";
 
         compactCode = `QTA1${values.size}${values.functionType}${values.spring}${values.temperature}-${values.variable}`;
         readableCode = `QTA1-${values.size}-${values.functionType}-${values.spring}-${values.temperature}-${values.variable}`;
 
         briefDescription = `QTA Pneumatic Quarter Turn Actuator, ${size.label}, ${functionType.label}, ${spring.label}, ${temperature.label}, ${torque.text}`;
-        fullDescription = `Janatics QTA Pneumatic Quarter Turn Actuator; Rack and Pinion design; 90° swivel angle; ${size.label}; ${functionType.label}; Spring Configuration: ${spring.label}; Temperature: ${temperature.label}; Variable: ${variable.label}; ${torque.text}.`;
+        fullDescription = `Janatics QTA Pneumatic Quarter Turn Actuator; Rack and Pinion design; 90° swivel angle; ${size.label}; ${functionType.label}; Spring Configuration: ${spring.label}; Temperature: ${temperature.label}; Variable: ${variable.label}; ${torque.text}; ${dimensionText}.`;
       }
 
       if (productKey === "qtaAccessory") {
