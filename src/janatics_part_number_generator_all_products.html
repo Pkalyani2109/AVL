@@ -3276,7 +3276,7 @@
             briefDescription += `, ${eqta.voltageLabel}${phaseText}, ${eqta.handwheelLabel}`;
           }
 
-          fullDescription = `Janatics ${briefDescription}${sizing && sizing.dimensionText ? `; ${sizing.dimensionText}` : ""}.`;
+          fullDescription = `Janatics ${briefDescription}.`;
         } else {
           briefDescription = `${product.model.label}, ${selectedOption(productKey, "bodyDesign", values.bodyDesign).label}, ${selectedOption(productKey, "connection", values.connection).label}, ${port.label} / ${port.dn}, ${pressure.label}, ${selectedOption(productKey, "material", values.material).label}, ${seat.label} Seat, ${actuation.label}`;
 
@@ -3291,7 +3291,7 @@
             briefDescription += `, ${eqta.voltageLabel}${phaseText}, ${eqta.handwheelLabel}`;
           }
 
-          fullDescription = `Janatics ${briefDescription}${sizing && sizing.dimensionText ? `; ${sizing.dimensionText}` : ""}.`;
+          fullDescription = `Janatics ${briefDescription}.`;
         }
       }
 
