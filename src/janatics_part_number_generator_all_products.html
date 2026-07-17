@@ -3249,6 +3249,8 @@
             const phaseText = eqta.phaseLabel ? `, ${eqta.phaseLabel}` : "";
             briefDescription += `, ${eqta.voltageLabel}${phaseText}, ${eqta.handwheelLabel}`;
           }
+
+          fullDescription = `Janatics ${briefDescription}${sizing && sizing.dimensionText ? `; ${sizing.dimensionText}` : ""}.`;
         } else {
           briefDescription = `${product.model.label}, ${selectedOption(productKey, "bodyDesign", values.bodyDesign).label}, ${selectedOption(productKey, "connection", values.connection).label}, ${port.label} / ${port.dn}, ${pressure.label}, ${selectedOption(productKey, "material", values.material).label}, ${seat.label} Seat, ${actuation.label}`;
 
@@ -3262,8 +3264,9 @@
             const phaseText = eqta.phaseLabel ? `, ${eqta.phaseLabel}` : "";
             briefDescription += `, ${eqta.voltageLabel}${phaseText}, ${eqta.handwheelLabel}`;
           }
+
+          fullDescription = `Janatics ${briefDescription}${sizing && sizing.dimensionText ? `; ${sizing.dimensionText}` : ""}.`;
         }
-        fullDescription = `Janatics ${briefDescription}.`;
       }
 
       if (productKey === "qta") {
@@ -3624,6 +3627,7 @@
           valveTorque,
           torqueText: `Output Torque @ 4 bar: ${formatNm(torqueAt4Bar)} Nm | FOS @ 4 bar: ${formatFos(fos4Bar)} | Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm | FOS @ 5 bar: ${formatFos(fos)}`,
           fos,
+          dimensionText: `Actuator dimensions: model ${row.qtaDa} / valve size ${row.valveSize}`,
           meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | 4 bar FOS ${formatFos(fos4Bar)} | 5 bar FOS ${formatFos(fos)}`
         };
       }
@@ -3639,6 +3643,7 @@
           valveTorque,
           torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} Nm / Spring End ${formatNm(sa.end5)} Nm`,
           fos: sa.fos,
+          dimensionText: `Actuator dimensions: model ${row.qtaSr} / valve size ${row.valveSize}`,
           meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} > ${formatNm(valveTorque)} (${sa.startPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.end5)} >= ${formatNm(valveTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | Resultant FOS: Pneumatic Start ${formatFos(sa.fosSpring)}, Spring End ${formatFos(sa.fosEnd)}; Governing/Minimum ${formatFos(sa.fos)}`
         };
       }
@@ -3656,6 +3661,7 @@
           valveTorque,
           torqueText: `Output Torque basis: ${formatNm(actuatorTorque)} Nm (electric actuator rated torque)`,
           fos,
+          dimensionText: `Actuator dimensions: model ${row.eqtaModel} / valve size ${row.valveSize}`,
           meta: `${row.eqtaPartNumber} | ${row.eqtaDescription} | ${eqta.voltageLabel}${phaseText} | ${eqta.handwheelLabel} | Valve torque basis: ${formatNm(valveTorque)} Nm`
         };
       }
@@ -3676,6 +3682,7 @@
         const torqueAt5Bar = torqueAt4Bar * 1.25;
         const fos4Bar = torqueAt4Bar / valveTorque;
         const fos = torqueAt5Bar / valveTorque;
+        const ga = BUTTERFLY_GA_DIMENSIONS_BY_PORT[values.port] || BUTTERFLY_GA_DIMENSIONS_BY_PORT["80"];
         return {
           actuationLabel: "Pneumatic - Double Acting",
           model: row.qtaDa,
@@ -3683,6 +3690,7 @@
           valveTorque,
           torqueText: `Output Torque @ 4 bar: ${formatNm(torqueAt4Bar)} Nm | FOS @ 4 bar: ${formatFos(fos4Bar)} | Output Torque @ 5 bar: ${formatNm(torqueAt5Bar)} Nm | FOS @ 5 bar: ${formatFos(fos)}`,
           fos,
+          dimensionText: `Actuator dimensions: Face to Face ${ga.faceToFace} mm, Body Width ${ga.bodyWidth} mm, Body Height ${ga.bodyHeight} mm, Disc Dia ${ga.discDia} mm`,
           meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | 4 bar FOS ${formatFos(fos4Bar)} | 5 bar FOS ${formatFos(fos)}`
         };
       }
@@ -3698,6 +3706,7 @@
           valveTorque,
           torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} Nm / Spring End ${formatNm(sa.end5)} Nm`,
           fos: sa.fos,
+          dimensionText: `Actuator dimensions: model ${row.qtaSr} / valve size ${row.valveSize}`,
           meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} > ${formatNm(valveTorque)} (${sa.startPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.end5)} >= ${formatNm(valveTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | Resultant FOS: Pneumatic Start ${formatFos(sa.fosSpring)}, Spring End ${formatFos(sa.fosEnd)}; Governing/Minimum ${formatFos(sa.fos)}`
         };
       }
@@ -3715,6 +3724,7 @@
           valveTorque,
           torqueText: `Output Torque basis: ${formatNm(actuatorTorque)} Nm (electric actuator rated torque)`,
           fos,
+          dimensionText: `Actuator dimensions: model ${row.eqtaModel} / valve size ${row.valveSize}`,
           meta: `${row.eqtaPartNumber} | ${row.eqtaDescription} | ${eqta.voltageLabel}${phaseText} | ${eqta.handwheelLabel}`
         };
       }
@@ -4218,13 +4228,15 @@
         addRow("End Connection standard", "ASME B16.5");
 
         if (values.actuation !== "1") {
-          addSection("Pneumatic Actuator / Electric Actuator details");
-          addRow("Pneumatic Actuator / Electric Actuator", mapActuationFamilyLabel(values.actuation) === "Electrical" ? "Electric Actuator" : "Pneumatic Actuator");
+          const actuatorFamilyLabel = mapActuationFamilyLabel(values.actuation) === "Electrical" ? "Electric Actuator" : "Pneumatic Actuator";
+
+          addSection(`${actuatorFamilyLabel} details`);
+          addRow(actuatorFamilyLabel, actuatorFamilyLabel);
           addRow("Operating type (ON/OFF / Modulation)", "ON/OFF");
           addRow("Size", sizing ? sizing.model : "");
           addRow("Mode of operation", values.actuation === "2" ? "Single Acting" : (values.actuation === "3" ? "Double Acting" : "ON/OFF"));
           addRow("Mechanism", values.actuation === "4" ? "Electric quarter turn" : "Rack and Pinion");
-          addRow("Torque", sizing ? sizing.torqueText : "");
+          addRow("Torque / FOS", sizing ? `${sizing.torqueText}${sizing.fos ? ` | FOS: ${formatFos(sizing.fos)}` : ""}` : "");
           addRow("Operating Pressure / Voltage", values.actuation === "4" ? getEqtaSelections().voltageLabel : "2.5 - 8 bar");
           addRow("Operating Medium", values.actuation === "4" ? "" : "Filtered Lubricated Compressed air");
           addRow("Ambient temperature", values.actuation === "4" ? "" : "-20 C to +80 C");
@@ -4256,12 +4268,14 @@
         addRow("Medium", getMediaLabel());
 
         if (values.actuation !== "1") {
-          addSection("Pneumatic Actuator / Electric Actuator details");
-          addRow("Pneumatic Actuator / Electric Actuator", mapActuationFamilyLabel(values.actuation) === "Electrical" ? "Electric Actuator" : "Pneumatic Actuator");
+          const actuatorFamilyLabel = mapActuationFamilyLabel(values.actuation) === "Electrical" ? "Electric Actuator" : "Pneumatic Actuator";
+
+          addSection(`${actuatorFamilyLabel} details`);
+          addRow(actuatorFamilyLabel, actuatorFamilyLabel);
           addRow("Operating type (ON/OFF / Modulation)", "ON/OFF");
           addRow("Size", sizing ? sizing.model : "");
           addRow("Mode of operation", values.actuation === "2" ? "Single Acting" : (values.actuation === "3" ? "Double Acting" : "ON/OFF"));
-          addRow("Torque", sizing ? sizing.torqueText : "");
+          addRow("Torque / FOS", sizing ? `${sizing.torqueText}${sizing.fos ? ` | FOS: ${formatFos(sizing.fos)}` : ""}` : "");
           addRow("Operating Pressure / Voltage", values.actuation === "4" ? getEqtaSelections().voltageLabel : "2.5 - 8 bar");
         }
       }
