@@ -789,7 +789,7 @@
               <button class="secondary" onclick="copyAll()">Copy Part Number + Description</button>
               <button class="secondary" onclick="downloadResultPdf()">Download Result as PDF</button>
               <button class="secondary" onclick="downloadTechnicalDatasheetPdf()">Download Technical Datasheet PDF</button>
-              <button class="secondary" onclick="downloadGaDrawingPdf()">Download GA Drawing PDF</button>
+              <button class="secondary" onclick="showGaDrawingComingSoon()">Download GA Drawing PDF (Coming Soon)</button>
               <a id="catalogDownloadBtn" class="catalog-link-btn secondary" href="#" download>Download Ball Valve Catalog</a>
             </div>
 
@@ -5056,56 +5056,11 @@
       });
     }
 
-    async function downloadGaDrawingPdf() {
-      if (!currentGenerated) generatePartNumber();
-
+    function showGaDrawingComingSoon() {
       const status = document.getElementById("copyStatus");
-      const jsPdfCtor = window.jspdf && window.jspdf.jsPDF;
-      if (!jsPdfCtor) {
-        status.textContent = "PDF library unavailable.";
-        setTimeout(() => status.textContent = "", 1800);
-        return;
-      }
-
-      if (!currentGenerated || !["butterfly", "qta"].includes(currentGenerated.productKey)) {
-        status.textContent = "GA drawing is currently available for Butterfly Valve and QTA only.";
-        setTimeout(() => status.textContent = "", 2200);
-        return;
-      }
-
-      const now = new Date();
-      const doc = new jsPdfCtor({ orientation: "landscape", unit: "mm", format: "a3" });
-
-      doc.setLineWidth(0.5);
-      doc.rect(6, 6, doc.internal.pageSize.getWidth() - 12, doc.internal.pageSize.getHeight() - 12);
-
-      let productPrefix = "BF";
-      if (currentGenerated.productKey === "butterfly") {
-        const ga = getButterflyGaData(currentGenerated.values);
-        drawButterflyGaSchematic(doc, ga);
-        productPrefix = "BF";
-      } else if (currentGenerated.productKey === "qta") {
-        const ga = getQtaGaData(currentGenerated.values);
-        const modelEnvelope = getActiveModelEnvelopeMm();
-        const modelViews = captureActiveModelViewsForPdf();
-        drawQtaGaSchematic(doc, ga, modelEnvelope, modelViews);
-        productPrefix = "QTA";
-      }
-
-      drawGaTitleBlock(doc, {
-        partNumber: currentGenerated.displayedCode,
-        drnBy: "System",
-        chkBy: "PM",
-        appBy: "QA",
-        revision: "00",
-        dateText: formatDateDdMmYyyy(now)
-      });
-
-      const fileCode = cleanPdfFileToken(currentGenerated.displayedCode || `${productPrefix}_GA`);
-      doc.save(`JANATICS_${productPrefix}_${fileCode || "GA"}_GA_DRAWING.pdf`);
-
-      status.textContent = "GA drawing PDF downloaded.";
-      setTimeout(() => status.textContent = "", 2000);
+      if (!status) return;
+      status.textContent = "GA Drawing PDF is coming soon.";
+      setTimeout(() => status.textContent = "", 2200);
     }
 
     function allCombinations(productKey) {
