@@ -778,6 +778,165 @@
     .breakdown-details:not([open]) .breakdown-hint::before {
       content: "Tap to expand";
     }
+
+    .workspace-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      background: #edf4fb;
+      border: 1px solid #d4e3f1;
+      border-radius: 12px;
+      width: fit-content;
+      margin-bottom: 14px;
+    }
+
+    .workspace-tab {
+      border: 1px solid transparent;
+      background: transparent;
+      color: #35516a;
+      font-weight: 800;
+      min-height: 34px;
+      padding: 7px 14px;
+      border-radius: 8px;
+    }
+
+    .workspace-tab.active {
+      background: linear-gradient(135deg, var(--janatics-blue), var(--dark-blue));
+      color: #ffffff;
+      box-shadow: 0 8px 16px rgba(0, 137, 201, 0.2);
+    }
+
+    .workspace-panel[hidden] {
+      display: none !important;
+    }
+
+    .knowledge-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .knowledge-chip {
+      display: inline-block;
+      border-radius: 999px;
+      border: 1px solid #bfdbfe;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #1e3a8a;
+      background: #eff6ff;
+    }
+
+    .knowledge-lede {
+      margin: 0;
+      color: #334155;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .knowledge-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .knowledge-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .knowledge-block {
+      border: 1px solid #dbe6f2;
+      border-radius: 10px;
+      background: #fbfdff;
+      padding: 12px;
+    }
+
+    .knowledge-block h3 {
+      margin: 0 0 8px;
+      color: #0f3558;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .knowledge-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .faq-wrap {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .knowledge-type-section {
+      margin-top: 14px;
+    }
+
+    .knowledge-type-section h3 {
+      margin: 0 0 8px;
+      color: #0f3558;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .knowledge-type-table th,
+    .knowledge-type-table td {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .knowledge-type-table th {
+      white-space: nowrap;
+    }
+
+    .faq-item {
+      border: 1px solid #dbe6f2;
+      border-radius: 10px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .faq-item summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #0f3558;
+      background: #f8fbff;
+    }
+
+    .faq-item p {
+      margin: 0;
+      padding: 0 12px 12px;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .knowledge-link {
+      display: inline-flex;
+      margin-top: 10px;
+      text-decoration: none;
+      border-radius: 8px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 10px;
+    }
   </style>
 </head>
 
@@ -809,6 +968,12 @@
   <main class="container">
     <div class="layout">
       <div class="column-stack">
+        <div class="workspace-tabs" role="tablist" aria-label="Workspace sections">
+          <button id="tabConfig" class="workspace-tab active" type="button" role="tab" aria-selected="true" aria-controls="configWorkspace" onclick="setWorkspaceTab('config')">Configuration</button>
+          <button id="tabKnowledge" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="knowledgeWorkspace" onclick="setWorkspaceTab('knowledge')">Application Knowledge + FAQ</button>
+        </div>
+
+        <div id="configWorkspace" class="workspace-panel">
         <section class="card">
           <div class="card-header">
             <h2>Configuration</h2>
@@ -900,6 +1065,54 @@
               </div>
             </div>
           </details>
+        </section>
+        </div>
+
+        <section id="knowledgeWorkspace" class="card workspace-panel" hidden>
+          <div class="card-header">
+            <h2>Product Application Knowledge</h2>
+            <span>Use-case guidance and FAQ for the selected product family.</span>
+          </div>
+          <div class="card-body">
+            <div class="knowledge-header">
+              <div>
+                <div id="knowledgeProductChip" class="knowledge-chip">Product: Pulse Valve</div>
+              </div>
+              <button type="button" class="secondary" onclick="setWorkspaceTab('config')">Back to Configuration</button>
+            </div>
+
+            <p id="knowledgeIntro" class="knowledge-lede">Select a product to load application knowledge.</p>
+
+            <div class="knowledge-grid">
+              <div class="knowledge-block">
+                <h3>Typical Applications</h3>
+                <ul id="knowledgeApplications" class="knowledge-list"></ul>
+              </div>
+              <div class="knowledge-block">
+                <h3>Selection Checklist</h3>
+                <ul id="knowledgeChecklist" class="knowledge-list"></ul>
+              </div>
+            </div>
+
+            <div id="knowledgeTypeSection" class="knowledge-type-section" style="display:none;">
+              <h3>Pulse Valve Type Selection Guide</h3>
+              <div class="table-wrap" style="margin-top:0;">
+                <table class="knowledge-type-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>How It Works</th>
+                      <th>Best Suited For</th>
+                    </tr>
+                  </thead>
+                  <tbody id="knowledgeTypeRows"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="section-title" style="margin-top:16px;">FAQ</div>
+            <div id="knowledgeFaq" class="faq-wrap"></div>
+          </div>
         </section>
       </div>
 
@@ -1301,6 +1514,160 @@
       "2": "63 mm actuator for DN32 to DN50 / G1 1/4 to G2 inch",
       "3": "80 mm actuator for DN65 / G2 1/2 inch",
       "4": "100 mm actuator for DN80 to DN100 / G3 to G4 inch"
+    };
+
+    const PRODUCT_KNOWLEDGE = {
+      ball: {
+        label: "Ball Valve",
+        intro: "Ball valves are general-purpose isolation valves with low pressure drop and quick quarter-turn operation.",
+        applications: [
+          "Compressed air utility lines",
+          "Water and process utility isolation",
+          "Oil and hydrocarbon transfer",
+          "Skid and panel manifold shutoff"
+        ],
+        checklist: [
+          "Select 2-piece or 3-piece body based on maintenance preference",
+          "Match end connection (threaded, flanged, TC-end) to piping standard",
+          "Confirm seat and seal material for media and temperature",
+          "For automation, validate valve torque plus safety factor"
+        ],
+        faq: [
+          { q: "When should I use 3-piece over 2-piece?", a: "Use 3-piece when frequent cleaning or inline maintenance is expected, because it is easier to service." },
+          { q: "Does media selection change part code?", a: "No. In this tool, media affects MOC guidance and review notes, while ordering code comes from selected ordering fields." }
+        ]
+      },
+      butterfly: {
+        label: "Butterfly Valve",
+        intro: "Butterfly valves are compact, cost-effective quarter-turn valves ideal for larger line sizes.",
+        applications: [
+          "Water distribution and utility loops",
+          "HVAC and cooling water systems",
+          "Large-diameter process isolation",
+          "Automated ON/OFF control with pneumatic or electric actuation"
+        ],
+        checklist: [
+          "Verify wafer/lug and flange compatibility",
+          "Confirm liner and seat suitability for fluid and temperature",
+          "Check line pressure and differential pressure",
+          "Use actuator sizing recommendation for selected valve size"
+        ],
+        faq: [
+          { q: "Why is actuator sizing shown for butterfly valves?", a: "Butterfly torque varies strongly by size and service, so the tool provides an actuator recommendation with factor of safety." },
+          { q: "Can butterfly valves throttle accurately?", a: "They can modulate for many duties, but precise control should still be validated against the process requirement." }
+        ]
+      },
+      qta: {
+        label: "QTA Actuator",
+        intro: "QTA pneumatic quarter-turn actuators convert air pressure into 90 degree rotational output for valve automation.",
+        applications: [
+          "Ball valve and butterfly valve actuation",
+          "Fast ON/OFF automation in utility and process lines",
+          "Spring return fail-safe applications",
+          "Remote-controlled valve skids"
+        ],
+        checklist: [
+          "Choose DA for air-to-open and air-to-close operation",
+          "Choose SR when fail-safe return is required",
+          "Check spring option against required fail torque",
+          "Match mounting interface and coupling adaptors"
+        ],
+        faq: [
+          { q: "What is the key difference between DA and SR?", a: "DA needs air in both directions, while SR uses spring force for return in one direction." },
+          { q: "How do I pick spring quantity in SR?", a: "Select spring quantity by required return torque and available supply pressure. Use torque table and review notes." }
+        ]
+      },
+      qtaAccessory: {
+        label: "QTA Accessories",
+        intro: "Accessories improve indication, manual operation, and mechanical coupling between actuator and valve.",
+        applications: [
+          "Open/close status feedback with limit switch box",
+          "Manual operation during air/power loss",
+          "Adaptor matching for non-standard shafts",
+          "Retrofit projects requiring coupling correction"
+        ],
+        checklist: [
+          "Confirm accessory model matches actuator series",
+          "Verify enclosure and cable entry for site conditions",
+          "Check torque rating for manual override units",
+          "Validate square/star adaptor dimensions before ordering"
+        ],
+        faq: [
+          { q: "Can I mix any adaptor with any actuator?", a: "No. Shaft geometry and actuator interface must match exactly, so dimensional confirmation is mandatory." },
+          { q: "Why are accessory models code-based?", a: "Codes map to predefined mechanical and instrumentation variants that simplify ordering and reduce mismatch." }
+        ]
+      },
+      pulse: {
+        label: "Pulse Valve",
+        intro: "Pulse valves deliver short, high-energy compressed-air bursts to clean filter elements in reverse-jet dust collection systems. The controller energizes a coil, pilot air lifts the diaphragm, and a rapid pulse expands and shakes dust from the media.",
+        typeGuide: [
+          {
+            type: "Diaphragm pulse valve",
+            howItWorks: "Rubber/NBR diaphragm flexes to open and close the main compressed-air passage.",
+            bestSuitedFor: "Standard reverse-jet baghouses and most general industrial dust collection systems."
+          },
+          {
+            type: "Pilot operated pulse valve",
+            howItWorks: "A small pilot solenoid controls a larger diaphragm-actuated main valve.",
+            bestSuitedFor: "High air-volume systems and larger dust collectors where stable pulse energy is needed."
+          },
+          {
+            type: "Direct-acting solenoid pulse valve",
+            howItWorks: "The solenoid directly opens the valve without a separate pilot stage.",
+            bestSuitedFor: "Smaller collectors and lower airflow requirements with simpler control architecture."
+          },
+          {
+            type: "Tank mounted pulse valve",
+            howItWorks: "Valve is bolted directly on the compressed-air header tank for direct discharge.",
+            bestSuitedFor: "Compact systems needing an integrated tank-and-valve assembly with reduced piping complexity."
+          },
+          {
+            type: "Angle seat / turbo pulse valve",
+            howItWorks: "Angled seat geometry improves discharge flow characteristics and pulse dynamics.",
+            bestSuitedFor: "High-frequency cleaning cycles and heavy dust-loading applications."
+          }
+        ],
+        applications: [
+          "Baghouse dust collectors",
+          "Cement and minerals process dust handling",
+          "Pharma and food powder collection",
+          "Reverse-jet cleaning in cartridge filter systems"
+        ],
+        checklist: [
+          "Verify valve body type and thread standard against manifold header",
+          "Match valve and port size to required cleaning energy and bag row volume",
+          "Confirm compressor pressure stability, pulse duration, and pulse interval settings",
+          "Select coil voltage, frequency, and enclosure rating per plant standard",
+          "Confirm diaphragm kit, spring, and seal compatibility for maintenance planning",
+          "Check compressed air quality (dryness, oil carryover, particulate) to avoid diaphragm wear"
+        ],
+        faq: [
+          { q: "How does reverse-jet pulse cleaning work in simple terms?", a: "A short pulse of compressed air is injected opposite to normal filtration flow. This creates a shock wave through the filter media and detaches accumulated dust cake." },
+          { q: "What controls pulse cleaning performance most?", a: "Pulse pressure, valve response time, nozzle/blow tube geometry, pulse duration, and pulse interval all influence cleaning effectiveness." },
+          { q: "How often should diaphragm kits be replaced?", a: "Replacement depends on cycle frequency, air quality, and temperature. Use preventive maintenance based on actual duty cycle." },
+          { q: "Can one pulse valve size fit all dust collectors?", a: "No. Valve and port sizing should match header volume, bag count, and target cleaning energy." }
+        ]
+      },
+      asv: {
+        label: "Angle Seat Valve",
+        intro: "Angle seat valves are robust pneumatically actuated valves suited for steam, hot water, and aggressive utility service.",
+        applications: [
+          "Steam isolation and distribution",
+          "Hot water and thermal process circuits",
+          "Clean utility and washdown process lines",
+          "High-cycle pneumatic on/off duties"
+        ],
+        checklist: [
+          "Choose body/actuator/seal combination per temperature and media",
+          "Confirm DN and port mapping from size field",
+          "Use recommended actuator diameter for selected DN",
+          "Validate flow direction and installation orientation"
+        ],
+        faq: [
+          { q: "Why does ASV actuator size depend on DN?", a: "Larger DN usually needs larger piston area to achieve required shutoff force and response under pressure." },
+          { q: "Is ASV suitable for dirty media?", a: "It can handle many utility fluids, but particulate-heavy or sticky service should be reviewed for seat wear risk." }
+        ]
+      }
     };
 
     const MASTER = {
@@ -2966,6 +3333,102 @@
       renderForm();
     }
 
+    function setWorkspaceTab(tabKey) {
+      const isConfig = tabKey !== "knowledge";
+      const configPanel = document.getElementById("configWorkspace");
+      const knowledgePanel = document.getElementById("knowledgeWorkspace");
+      const tabConfig = document.getElementById("tabConfig");
+      const tabKnowledge = document.getElementById("tabKnowledge");
+
+      if (configPanel) configPanel.hidden = !isConfig;
+      if (knowledgePanel) knowledgePanel.hidden = isConfig;
+
+      if (tabConfig) {
+        tabConfig.classList.toggle("active", isConfig);
+        tabConfig.setAttribute("aria-selected", String(isConfig));
+      }
+      if (tabKnowledge) {
+        tabKnowledge.classList.toggle("active", !isConfig);
+        tabKnowledge.setAttribute("aria-selected", String(!isConfig));
+      }
+    }
+
+    function renderKnowledgeForProduct(productKey) {
+      const knowledge = PRODUCT_KNOWLEDGE[productKey] || PRODUCT_KNOWLEDGE.ball;
+      const chip = document.getElementById("knowledgeProductChip");
+      const intro = document.getElementById("knowledgeIntro");
+      const appList = document.getElementById("knowledgeApplications");
+      const checklist = document.getElementById("knowledgeChecklist");
+      const faqWrap = document.getElementById("knowledgeFaq");
+      const typeSection = document.getElementById("knowledgeTypeSection");
+      const typeRows = document.getElementById("knowledgeTypeRows");
+
+      if (chip) chip.textContent = `Product: ${knowledge.label}`;
+      if (intro) intro.textContent = knowledge.intro;
+
+      if (appList) {
+        appList.innerHTML = "";
+        knowledge.applications.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          appList.appendChild(li);
+        });
+      }
+
+      if (checklist) {
+        checklist.innerHTML = "";
+        knowledge.checklist.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          checklist.appendChild(li);
+        });
+      }
+
+      if (faqWrap) {
+        faqWrap.innerHTML = "";
+        knowledge.faq.forEach((item, index) => {
+          const details = document.createElement("details");
+          details.className = "faq-item";
+          if (index === 0) details.open = true;
+
+          const summary = document.createElement("summary");
+          summary.textContent = item.q;
+          details.appendChild(summary);
+
+          const answer = document.createElement("p");
+          answer.textContent = item.a;
+          details.appendChild(answer);
+
+          faqWrap.appendChild(details);
+        });
+      }
+
+      if (typeSection && typeRows) {
+        typeRows.innerHTML = "";
+        const hasTypeGuide = Array.isArray(knowledge.typeGuide) && knowledge.typeGuide.length > 0;
+        typeSection.style.display = hasTypeGuide ? "block" : "none";
+        if (hasTypeGuide) {
+          knowledge.typeGuide.forEach(item => {
+            const tr = document.createElement("tr");
+
+            const typeCell = document.createElement("td");
+            typeCell.textContent = item.type;
+            tr.appendChild(typeCell);
+
+            const howCell = document.createElement("td");
+            howCell.textContent = item.howItWorks;
+            tr.appendChild(howCell);
+
+            const suitedCell = document.createElement("td");
+            suitedCell.textContent = item.bestSuitedFor;
+            tr.appendChild(suitedCell);
+
+            typeRows.appendChild(tr);
+          });
+        }
+      }
+    }
+
     function updateProductButtons(productKey) {
       const buttons = document.querySelectorAll("#productButtons button[data-product]");
       buttons.forEach(button => {
@@ -3055,6 +3518,7 @@
       handleDependencies();
       updateProductButtons(productKey);
       updateCatalogLink(productKey);
+      renderKnowledgeForProduct(productKey);
       generatePartNumber();
       update3DPreview(productKey);
     }
@@ -5432,6 +5896,7 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       populateMediaOptions();
+      setWorkspaceTab("config");
       setJanaticsSyncStatus(modelAlignmentLastStatus, "warn");
       await loadModelAlignmentStore();
       loadAssetResolverConfig();
