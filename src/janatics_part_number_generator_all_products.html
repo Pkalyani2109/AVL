@@ -1127,24 +1127,19 @@
 
         <section id="crossrefWorkspace" class="card workspace-panel" hidden>
           <div class="card-header">
-            <h2>Competitor Actuator Equivalent</h2>
-            <span>Phase 1: Air Torque (AT) spring-return actuator to Janatics QTA.</span>
+            <h2>Competitor Equivalent</h2>
+            <span>Select a product family and compare the available verified equivalent rules.</span>
           </div>
           <div class="card-body">
             <div class="crossref-grid">
               <div class="wide">
-                <label for="atPartNumber">Air Torque part number</label>
-                <input id="atPartNumber" type="text" value="FA AT301U S08 A HT-F07/10-22DS" placeholder="Example: FA AT301U S08 A HT-F07/10-22DS" oninput="decodeAirTorquePartNumber()" />
-                <div class="helper">Spaces and hyphens are optional. The decoder reads AT model, spring quantity, temperature, flange and drive.</div>
+                <div id="crossrefHelp" class="helper">Competitor equivalent follows the currently selected product in Quick Product Switcher.</div>
               </div>
-              <div><label for="atAirStart">Air start at 4 bar (Nm)</label><input id="atAirStart" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
-              <div><label for="atAirEnd">Air end at 4 bar (Nm)</label><input id="atAirEnd" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
-              <div><label for="atSpringStart">Spring start at 4 bar (Nm)</label><input id="atSpringStart" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
-              <div><label for="atSpringEnd">Spring end at 4 bar (Nm)</label><input id="atSpringEnd" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
+              <div id="crossrefFields" class="wide"></div>
             </div>
-            <div class="button-row"><button type="button" onclick="decodeAirTorquePartNumber()">Find Janatics Equivalent</button><button type="button" class="secondary" onclick="copyCrossrefResult()">Copy Result</button></div>
-            <div id="atDecodeStatus" class="status warning">Enter an Air Torque part number.</div>
-            <div id="atCrossrefResult" class="crossref-result" hidden></div>
+            <div class="button-row"><button type="button" onclick="runCrossrefEquivalent()">Find Janatics Equivalent</button><button type="button" class="secondary" onclick="copyCrossrefResult()">Copy Result</button></div>
+            <div id="crossrefStatus" class="status warning">Choose a product family to begin.</div>
+            <div id="crossrefResult" class="crossref-result" hidden></div>
           </div>
         </section>
       </div>
@@ -1923,6 +1918,7 @@
 
     let currentGenerated = null;
     let currentCompatibilityText = "";
+    let crossrefSyncInProgress = false;
     const PRODUCT_CATALOGS = {
       ball: { label: "Ball Valve Catalog", fileName: "BALL%20VALVE.pdf" },
       butterfly: { label: "Butterfly Valve Catalog", fileName: "butter%20fly%20valve.pdf" },
@@ -2309,9 +2305,8 @@
           eqtaHandwheel.value = String(savedState.eqtaHandwheel);
         }
 
-        const nextProduct = String(savedState.productKey || "");
-        if (productSelect && nextProduct && MASTER[nextProduct]) {
-          productSelect.value = nextProduct;
+        if (productSelect) {
+          productSelect.value = "ball";
         }
 
         renderForm();
@@ -3416,18 +3411,401 @@
         tabCrossref.classList.toggle("active", isCrossref);
         tabCrossref.setAttribute("aria-selected", String(isCrossref));
       }
+
+      if (isCrossref) renderCrossrefWorkspace();
+    }
+
+    function getActiveCrossrefProductKey(forcedProductKey) {
+      const currentProduct = document.getElementById("productType") ? document.getElementById("productType").value : "qta";
+      const useForced = typeof forcedProductKey === "string" && !!MASTER[forcedProductKey];
+      if (useForced) return forcedProductKey;
+      return MASTER[currentProduct] ? currentProduct : "qta";
+    }
+
+    function renderCrossrefWorkspace(forcedProductKey) {
+      const productKey = getActiveCrossrefProductKey(forcedProductKey);
+      const crossrefHelp = document.getElementById("crossrefHelp");
+      const crossrefFields = document.getElementById("crossrefFields");
+
+      if (!crossrefFields || !crossrefHelp) return;
+
+      crossrefHelp.textContent = getCrossrefHelpText(productKey);
+      crossrefFields.innerHTML = renderCrossrefFields(productKey);
+
+      if (productKey === "qta") {
+        decodeAirTorquePartNumber();
+        return;
+      }
+
+      runCrossrefEquivalent();
+    }
+
+    function getCrossrefHelpText(productKey) {
+      if (productKey === "qta") return "Air Torque to Janatics QTA mapping. Enter the competitor part number and torque points.";
+      if (productKey === "ball") return "Ball Valve equivalent uses the same verified actuator sizing rules as the main configurator.";
+      if (productKey === "butterfly") return "Butterfly Valve equivalent uses the same verified actuator sizing rules as the main configurator.";
+      if (productKey === "qtaAccessory") return "QTA Accessories use the accessory type and model mapping already defined in the catalogue.";
+      if (productKey === "pulse") return "Pulse Valve fields are shown for the selected body type, port, seal and coil voltage.";
+      if (productKey === "asv") return "Angle Seat Valve fields are shown for the selected type, body/actuator combination and connection.";
+      return "Choose a product family to load the matching equivalent fields.";
+    }
+
+    function getCrossrefReadyText(productKey) {
+      if (productKey === "qta") return "Enter an Air Torque part number.";
+      if (productKey === "ball") return "Review Ball Valve sizing inputs and click Find Janatics Equivalent.";
+      if (productKey === "butterfly") return "Review Butterfly Valve sizing inputs and click Find Janatics Equivalent.";
+      if (productKey === "qtaAccessory") return "Review accessory fields and click Find Janatics Equivalent.";
+      if (productKey === "pulse") return "Review pulse valve fields and click Find Janatics Equivalent.";
+      if (productKey === "asv") return "Review angle seat valve fields and click Find Janatics Equivalent.";
+      return "Choose a product family to begin.";
+    }
+
+    function renderCrossrefFields(productKey) {
+      if (productKey === "qta") {
+        const makeValue = String(document.getElementById("crossref_qtaMake")?.value || "AIR_TORQUE");
+        const makeOtherValue = String(document.getElementById("crossref_qtaMakeOther")?.value || "");
+        return `
+          <div>
+            <label for="crossref_qtaMake">Competitor Make</label>
+            <select id="crossref_qtaMake" onchange="toggleQtaCompetitorMakeOther(); decodeAirTorquePartNumber()">
+              <option value="AIR_TORQUE"${makeValue === "AIR_TORQUE" ? " selected" : ""}>Air Torque</option>
+              <option value="ROTEX"${makeValue === "ROTEX" ? " selected" : ""}>Rotex</option>
+              <option value="BRAY"${makeValue === "BRAY" ? " selected" : ""}>Bray</option>
+              <option value="KEYSTONE"${makeValue === "KEYSTONE" ? " selected" : ""}>Keystone</option>
+              <option value="OTHER"${makeValue === "OTHER" ? " selected" : ""}>Other</option>
+            </select>
+          </div>
+          <div>
+            <label for="crossref_qtaMakeOther">Competitor Make (Free text)</label>
+            <input id="crossref_qtaMakeOther" type="text" placeholder="Enter make if not listed" value="${escapeHtml(makeOtherValue)}" oninput="decodeAirTorquePartNumber()" />
+          </div>
+          <div>
+            <label for="atBaseFlange">Base Flange</label>
+            <input id="atBaseFlange" type="text" placeholder="Example: F05/F07" oninput="decodeAirTorquePartNumber()" />
+          </div>
+          <div>
+            <label for="atSquareSize">Square Size (mm)</label>
+            <input id="atSquareSize" type="number" step="1" min="1" placeholder="Example: 17" oninput="decodeAirTorquePartNumber()" />
+          </div>
+          <div>
+            <label for="atBottomPcd">Bottom PCD Details</label>
+            <input id="atBottomPcd" type="text" placeholder="Example: PCD 50 / PCD 70" oninput="decodeAirTorquePartNumber()" />
+          </div>
+          <div class="wide">
+            <label for="atPartNumber">Comp. Part Number</label>
+            <input id="atPartNumber" type="text" value="FA AT301U S08 A HT-F07/10-22DS" placeholder="Example: FA AT301U S08 A HT-F07/10-22DS" oninput="decodeAirTorquePartNumber()" />
+            <div class="helper">Spaces and hyphens are optional. The decoder reads AT model, spring quantity, temperature, flange and drive.</div>
+          </div>
+          <div><label for="atAirStart">Air start at 4 bar (Nm)</label><input id="atAirStart" type="number" step="0.1" oninput="decodeAirTorquePartNumber()" /></div>
+          <div><label for="atAirEnd">Air end at 4 bar (Nm)</label><input id="atAirEnd" type="number" step="0.1" oninput="decodeAirTorquePartNumber()" /></div>
+          <div><label for="atSpringStart">Spring start at 4 bar (Nm)</label><input id="atSpringStart" type="number" step="0.1" oninput="decodeAirTorquePartNumber()" /></div>
+          <div><label for="atSpringEnd">Spring end at 4 bar (Nm)</label><input id="atSpringEnd" type="number" step="0.1" oninput="decodeAirTorquePartNumber()" /></div>
+        `;
+      }
+
+      const product = MASTER[productKey];
+      if (!product) return "";
+
+      const fieldKeys = product.fields.map(field => field.key);
+      const previewValues = {};
+      const coreFields = fieldKeys.map(fieldKey => renderCrossrefField(productKey, fieldKey, previewValues)).join("");
+      if (productKey === "ball" || productKey === "butterfly") {
+        return `${renderCrossrefCompetitorDetailsFields()}${coreFields}`;
+      }
+      return coreFields;
+    }
+
+    function getQtaCompetitorMakeLabel() {
+      const select = document.getElementById("crossref_qtaMake");
+      const freeText = String(document.getElementById("crossref_qtaMakeOther")?.value || "").trim();
+      const selected = select ? select.value : "AIR_TORQUE";
+      if (selected === "OTHER") return freeText || "Other";
+      if (!select) return freeText || "Air Torque";
+      const selectedOption = select.options[select.selectedIndex];
+      return (selectedOption && selectedOption.textContent ? selectedOption.textContent : "Air Torque").trim();
+    }
+
+    function toggleQtaCompetitorMakeOther() {
+      const select = document.getElementById("crossref_qtaMake");
+      const freeText = document.getElementById("crossref_qtaMakeOther");
+      if (!freeText) return;
+      const isOther = select && select.value === "OTHER";
+      freeText.disabled = !isOther;
+      freeText.style.opacity = isOther ? "1" : "0.65";
+      if (!isOther) freeText.value = "";
+    }
+
+    function renderCrossrefCompetitorDetailsFields() {
+      const makeValue = String(document.getElementById("crossref_competitorMake")?.value || "");
+      const modelValue = String(document.getElementById("crossref_competitorModel")?.value || "");
+      const descriptionValue = String(document.getElementById("crossref_competitorDescription")?.value || "");
+      return `
+        <div class="wide">
+          <label for="crossref_competitorMake">Competitor Make</label>
+          <input id="crossref_competitorMake" type="text" placeholder="Example: Air Torque / Bray / Keystone" value="${escapeHtml(makeValue)}" oninput="runCrossrefEquivalent()" />
+        </div>
+        <div>
+          <label for="crossref_competitorModel">Competitor Model No</label>
+          <input id="crossref_competitorModel" type="text" placeholder="Model or part number" value="${escapeHtml(modelValue)}" oninput="runCrossrefEquivalent()" />
+        </div>
+        <div class="wide">
+          <label for="crossref_competitorDescription">Competitor Description</label>
+          <input id="crossref_competitorDescription" type="text" placeholder="Free text description" value="${escapeHtml(descriptionValue)}" oninput="runCrossrefEquivalent()" />
+        </div>
+      `;
+    }
+
+    function getCrossrefCompetitorMeta(productKey) {
+      if (!(productKey === "ball" || productKey === "butterfly")) {
+        return { make: "", model: "", description: "" };
+      }
+
+      return {
+        make: String(document.getElementById("crossref_competitorMake")?.value || "").trim(),
+        model: String(document.getElementById("crossref_competitorModel")?.value || "").trim(),
+        description: String(document.getElementById("crossref_competitorDescription")?.value || "").trim()
+      };
+    }
+
+    function renderCrossrefField(productKey, fieldKey, previewValues) {
+      const field = MASTER[productKey].fields.find(item => item.key === fieldKey);
+      if (!field) return "";
+
+      const selectId = `crossref_${fieldKey}`;
+      const currentValue = document.getElementById(selectId)?.value || previewValues[fieldKey] || (getCrossrefOptions(productKey, fieldKey, previewValues)[0] || {}).code || "";
+      previewValues[fieldKey] = currentValue;
+      const options = getCrossrefOptions(productKey, fieldKey, previewValues);
+      const fieldClass = ["crossref-field", fieldKey === "bodyType" || fieldKey === "accessoryType" ? "wide" : ""].filter(Boolean).join(" ");
+      let extra = "";
+
+      if (productKey === "qtaAccessory" && fieldKey === "accessoryType") {
+        extra = ` onchange="handleCrossrefDependencies('accessoryType')"`;
+      } else if (productKey === "pulse" && fieldKey === "bodyType") {
+        extra = ` onchange="handleCrossrefDependencies('bodyType')"`;
+      } else if (productKey === "asv" && (fieldKey === "size" || fieldKey === "actuator")) {
+        extra = ` onchange="handleCrossrefDependencies('${fieldKey}')"`;
+      } else {
+        extra = ` onchange="handleCrossrefDependencies('${fieldKey}')"`;
+      }
+
+      return `
+        <div class="${fieldClass}">
+          <label for="${selectId}">${escapeHtml(field.label)}</label>
+          <select id="${selectId}"${extra}>
+            ${options.map(option => `<option value="${escapeHtml(option.code)}"${currentValue === option.code ? " selected" : ""}>${escapeHtml(formatCrossrefOptionLabel(productKey, fieldKey, option))}</option>`).join("")}
+          </select>
+        </div>
+      `;
+    }
+
+    function getCrossrefOptions(productKey, fieldKey, previewValues = {}) {
+      if (productKey === "qtaAccessory" && fieldKey === "accessoryModel") {
+        const typeKey = previewValues.accessoryType || document.getElementById("crossref_accessoryType")?.value || "positionIndicator";
+        return (ACCESSORY_DATA[typeKey] || ACCESSORY_DATA.positionIndicator).models;
+      }
+
+      return (MASTER[productKey].fields.find(item => item.key === fieldKey) || { options: [] }).options || [];
+    }
+
+    function formatCrossrefOptionLabel(productKey, fieldKey, option) {
+      if (productKey === "qtaAccessory" && fieldKey === "accessoryModel") return `${option.code} - ${option.label}`;
+      if (productKey === "qtaAccessory" && fieldKey === "accessoryType") return option.label;
+      return `${option.code} - ${formatDropdownLabel(productKey, fieldKey, option.label)}${option.dn ? " / " + option.dn : ""}`;
+    }
+
+    function handleCrossrefDependencies(changedField) {
+      const productKey = getActiveCrossrefProductKey();
+      if (productKey === "ball") filterBallOptions("crossref_");
+      if (productKey === "pulse") filterPulsePorts("crossref_");
+      if (productKey === "asv") filterAsvDependencies(changedField, "crossref_");
+      if (productKey === "qtaAccessory") rebuildAccessoryModelOptions("crossref_");
+      if (productKey === "qta") {
+        decodeAirTorquePartNumber();
+        return;
+      }
+
+      runCrossrefEquivalent();
+    }
+
+    function runCrossrefEquivalent() {
+      const productKey = getActiveCrossrefProductKey();
+      if (productKey === "qta") {
+        decodeAirTorquePartNumber();
+        return;
+      }
+
+      const values = collectCrossrefSelections(productKey);
+      const competitorMeta = getCrossrefCompetitorMeta(productKey);
+      const validation = validate(productKey, values);
+      const status = document.getElementById("crossrefStatus");
+      const result = document.getElementById("crossrefResult");
+
+      if (validation.errors.length > 0) {
+        window.currentCrossrefText = "";
+        if (status) {
+          status.className = "status invalid";
+          status.textContent = "Invalid combination. Please review selected options.";
+        }
+        if (result) {
+          result.hidden = true;
+          result.innerHTML = "";
+        }
+        return;
+      }
+
+      const row = buildRowForCombination(productKey, values, validation);
+      const sizing = productKey === "ball"
+        ? getBallActuatorSizing(values)
+        : productKey === "butterfly"
+          ? getButterflyActuatorSizing(values)
+          : null;
+
+      let resultHtml = `<h3>${escapeHtml(row.readableCode)}</h3>`;
+      resultHtml += `<div class="knowledge-chip">${escapeHtml(MASTER[productKey].model.label)} equivalent</div>`;
+
+      if (competitorMeta.make || competitorMeta.model || competitorMeta.description) {
+        const metaParts = [];
+        if (competitorMeta.make) metaParts.push(`Make: ${competitorMeta.make}`);
+        if (competitorMeta.model) metaParts.push(`Model: ${competitorMeta.model}`);
+        if (competitorMeta.description) metaParts.push(`Description: ${competitorMeta.description}`);
+        resultHtml += `<p><strong>Competitor reference:</strong> ${escapeHtml(metaParts.join(" | "))}</p>`;
+      }
+
+      resultHtml += `<p>${escapeHtml(row.description)}</p>`;
+
+      if (sizing) {
+        resultHtml += `<div class="crossref-metrics"><div class="crossref-metric">Equivalent model<strong>${escapeHtml(sizing.model)}</strong></div><div class="crossref-metric">Valve torque<strong>${escapeHtml(formatNm(sizing.valveTorque))} Nm</strong></div><div class="crossref-metric">Factor of safety<strong>${escapeHtml(formatFos(sizing.fos))}</strong></div><div class="crossref-metric">Actuation<strong>${escapeHtml(sizing.actuationLabel)}</strong></div></div>`;
+        resultHtml += `<p class="helper">${escapeHtml(sizing.meta)}</p>`;
+      } else if (productKey === "qtaAccessory" || productKey === "pulse" || productKey === "asv") {
+        resultHtml += `<div class="helper" style="margin-top:10px;">No competitor dataset is verified for this family yet, so the Janatics reference is shown from the configured catalogue fields.</div>`;
+      }
+
+      window.currentCrossrefText = `${row.readableCode} -> ${row.description}`;
+      if (competitorMeta.make || competitorMeta.model || competitorMeta.description) {
+        const competitorParts = [];
+        if (competitorMeta.make) competitorParts.push(`Make ${competitorMeta.make}`);
+        if (competitorMeta.model) competitorParts.push(`Model ${competitorMeta.model}`);
+        if (competitorMeta.description) competitorParts.push(`Description ${competitorMeta.description}`);
+        window.currentCrossrefText = `${competitorParts.join("; ")} -> ${window.currentCrossrefText}`;
+      }
+      if (validation.notes.length > 0) {
+        window.currentCrossrefText += ` | ${validation.notes.join(" | ")}`;
+      }
+
+      if (status) {
+        status.className = validation.notes.length > 0 ? "status warning" : "status success";
+        status.textContent = validation.notes.length > 0 ? "Equivalent generated with review notes." : "Equivalent generated from verified catalogue data.";
+      }
+      if (result) {
+        result.hidden = false;
+        result.innerHTML = resultHtml;
+      }
+
+      syncGeneratedOutputFromCrossref(productKey, values);
+    }
+
+    function collectCrossrefSelections(productKey) {
+      const values = {};
+      if (productKey === "qta") return values;
+
+      const product = MASTER[productKey];
+      product.fields.forEach(field => {
+        const element = document.getElementById(`crossref_${field.key}`);
+        values[field.key] = element ? element.value : "";
+      });
+      return values;
+    }
+
+    function syncGeneratedOutputFromCrossref(productKey, values) {
+      if (crossrefSyncInProgress || !MASTER[productKey] || productKey === "qta") return;
+
+      const productSelect = document.getElementById("productType");
+      if (!productSelect) return;
+
+      crossrefSyncInProgress = true;
+      try {
+        if (productSelect.value !== productKey) {
+          productSelect.value = productKey;
+          renderForm();
+        }
+
+        Object.keys(values || {}).forEach(key => {
+          const select = document.getElementById(`field_${key}`);
+          if (!select) return;
+          const desired = String(values[key] ?? "");
+          if (Array.from(select.options).some(option => option.value === desired)) {
+            select.value = desired;
+          }
+        });
+
+        handleDependencies();
+        generatePartNumber();
+      } finally {
+        crossrefSyncInProgress = false;
+      }
+    }
+
+    function syncGeneratedOutputFromQtaEquivalent(size, spring, temperatureCode) {
+      if (crossrefSyncInProgress) return;
+
+      const productSelect = document.getElementById("productType");
+      if (!productSelect) return;
+
+      crossrefSyncInProgress = true;
+      try {
+        if (productSelect.value !== "qta") {
+          productSelect.value = "qta";
+          renderForm();
+        }
+
+        const updates = {
+          size: String(size || ""),
+          functionType: "SA",
+          spring: String(spring || ""),
+          temperature: String(temperatureCode || "S"),
+          variable: "01"
+        };
+
+        Object.keys(updates).forEach(key => {
+          const select = document.getElementById(`field_${key}`);
+          if (!select) return;
+          const desired = updates[key];
+          if (Array.from(select.options).some(option => option.value === desired)) {
+            select.value = desired;
+          }
+        });
+
+        handleDependencies();
+        generatePartNumber();
+      } finally {
+        crossrefSyncInProgress = false;
+      }
+    }
+
+    function getCrossrefStatusElement() {
+      return document.getElementById("crossrefStatus") || document.getElementById("atDecodeStatus");
+    }
+
+    function getCrossrefResultElement() {
+      return document.getElementById("crossrefResult") || document.getElementById("atCrossrefResult");
     }
 
     function decodeAirTorquePartNumber() {
       const raw = String(document.getElementById("atPartNumber")?.value || "").toUpperCase().trim();
-      const model = raw.match(/AT\s*([0-9]{3,4})U?/);
+      const model = raw.match(/AT\s*([0-9]{2,4})U?/);
       const spring = raw.match(/S\s*(0?[5-9]|1[0-6])/);
       const flange = raw.match(/F(0?\d{1,2})(?:\s*[+\/]\s*F?(0?\d{1,2}))?/);
-      const drive = raw.match(/(?:-|\s)(\d{1,2})DS\b/);
-      const status = document.getElementById("atDecodeStatus");
+      const drive = raw.match(/(?:-|\s|\/)(\d{1,2})\s*DS\b/);
+      const status = getCrossrefStatusElement();
+      const resultBox = getCrossrefResultElement();
       if (!model || !spring) {
+        window.currentAtDecode = null;
+        window.currentCrossrefText = "";
         if (status) { status.className = "status danger"; status.textContent = "Part number not recognized. Enter at least the AT model and S spring code."; }
-        document.getElementById("atCrossrefResult").hidden = true;
+        if (resultBox) {
+          resultBox.hidden = true;
+          resultBox.innerHTML = "";
+        }
         return;
       }
       const modelCode = `AT${model[1]}U`;
@@ -3435,10 +3813,16 @@
       const key = `${modelCode}-${springCode}`;
       const verified = AIR_TORQUE_4BAR[key];
       const parsedFlange = flange ? (flange[2] ? `F${flange[1].padStart(2,"0")}/F${flange[2].padStart(2,"0")}` : `F${flange[1].padStart(2,"0")}`) : "";
+      const manualBaseFlange = String(document.getElementById("atBaseFlange")?.value || "").trim().toUpperCase().replaceAll("+", "/");
+      const manualSquareSize = Number(document.getElementById("atSquareSize")?.value || "");
+      const manualBottomPcd = String(document.getElementById("atBottomPcd")?.value || "").trim();
+      const competitorMake = getQtaCompetitorMakeLabel();
       window.currentAtDecode = {
-        brand:"Air Torque", model:modelCode, spring:springCode,
+        brand:competitorMake || "Air Torque", model:modelCode, spring:springCode,
         temperature:/\bHT\b/.test(raw) ? "H" : (/\bLL?T\b/.test(raw) ? "L" : "S"),
-        flange:parsedFlange || verified?.flange || "", drive:Number(drive?.[1] || verified?.drive || 0)
+        flange:manualBaseFlange || parsedFlange || verified?.flange || "",
+        drive:Number.isFinite(manualSquareSize) && manualSquareSize > 0 ? manualSquareSize : Number(drive?.[1] || verified?.drive || 0),
+        bottomPcd: manualBottomPcd
       };
       if (verified) {
         [["atAirStart",verified.airStart],["atAirEnd",verified.airEnd],["atSpringStart",verified.springStart],["atSpringEnd",verified.springEnd]].forEach(([id,value]) => { const el=document.getElementById(id); if(el) el.value=value; });
@@ -3452,12 +3836,25 @@
 
     function selectAtEquivalent() {
       const decoded = window.currentAtDecode;
-      if (!decoded) return;
+      const result = getCrossrefResultElement();
+      const status = getCrossrefStatusElement();
+      if (!decoded) {
+        if (result) result.hidden = true;
+        return;
+      }
       const required = {
         airStart:Number(document.getElementById("atAirStart")?.value), airEnd:Number(document.getElementById("atAirEnd")?.value),
         springStart:Number(document.getElementById("atSpringStart")?.value), springEnd:Number(document.getElementById("atSpringEnd")?.value)
       };
-      if (Object.values(required).some(value => !Number.isFinite(value) || value <= 0)) return;
+      if (Object.values(required).some(value => !Number.isFinite(value) || value <= 0)) {
+        window.currentCrossrefText = "";
+        if (result) result.hidden = true;
+        if (status) {
+          status.className = "status warning";
+          status.textContent = "Enter all four 4-bar torque values to find the Janatics equivalent.";
+        }
+        return;
+      }
       const normalizeFlange = value => String(value).replaceAll("+","/").toUpperCase();
       const compatible = JANATICS_CROSSREF_CANDIDATES.filter(item =>
         (!decoded.flange || normalizeFlange(item.flange) === normalizeFlange(decoded.flange)) &&
@@ -3465,9 +3862,8 @@
         item.airStart >= required.airStart && item.airEnd >= required.airEnd &&
         item.springStart >= required.springStart && item.springEnd >= required.springEnd
       ).sort((a,b) => Math.min(a.airStart,a.airEnd,a.springStart,a.springEnd)-Math.min(b.airStart,b.airEnd,b.springStart,b.springEnd));
-      const result = document.getElementById("atCrossrefResult");
-      const status = document.getElementById("atDecodeStatus");
       if (!compatible.length) {
+        window.currentCrossrefText = "";
         result.hidden = false;
         result.innerHTML = `<h3>Engineering review required</h3><p>No verified candidate currently satisfies all four torque points together with ${escapeHtml(decoded.flange || "the specified flange")} and ${decoded.drive || "the specified"} mm drive.</p>`;
         if (status) { status.className="status danger"; status.textContent="No standard equivalent found in the verified dataset."; }
@@ -3477,17 +3873,29 @@
       const tempCode = decoded.temperature || "S";
       const part = `QTA1${best.size}SA${best.spring}${tempCode}-01`;
       const tempText = tempCode === "H" ? "High temperature (-15°C to +150°C)" : tempCode === "L" ? "Low temperature" : "Standard temperature";
-      const direct = best.flange === decoded.flange && best.drive === decoded.drive;
+      const direct = normalizeFlange(best.flange) === normalizeFlange(decoded.flange || best.flange) && best.drive === (decoded.drive || best.drive);
       const classification = direct ? "Direct interface equivalent" : "Equivalent with interface confirmation";
-      window.currentCrossrefText = `${decoded.brand} ${decoded.model} ${decoded.spring} -> Janatics ${part}; ${classification}; 4 bar air ${best.airStart}/${best.airEnd} Nm; spring ${best.springStart}/${best.springEnd} Nm; ${best.flange}; ${best.drive} mm drive; ${tempText}. Confirm fail direction and operating time.`;
+      const interfaceDetails = [
+        decoded.flange ? `${decoded.flange}` : "",
+        decoded.drive ? `${decoded.drive} mm square` : "",
+        decoded.bottomPcd ? `Bottom PCD: ${decoded.bottomPcd}` : ""
+      ].filter(Boolean).join(" | ");
+      window.currentCrossrefText = `${decoded.brand} ${decoded.model} ${decoded.spring} -> Janatics ${part}; ${classification}; 4 bar air ${best.airStart}/${best.airEnd} Nm; spring ${best.springStart}/${best.springEnd} Nm; ${interfaceDetails || `${best.flange}; ${best.drive} mm drive`}; ${tempText}. Confirm fail direction and operating time.`;
       result.hidden = false;
-      result.innerHTML = `<h3>${escapeHtml(part)}</h3><div class="knowledge-chip">${escapeHtml(classification)}</div><div class="crossref-metrics"><div class="crossref-metric">Air stroke at 4 bar<strong>${best.airStart} → ${best.airEnd} Nm</strong></div><div class="crossref-metric">Spring stroke<strong>${best.springStart} → ${best.springEnd} Nm</strong></div><div class="crossref-metric">ISO 5211 / Drive<strong>${escapeHtml(best.flange)} / ${best.drive} mm</strong></div><div class="crossref-metric">Temperature<strong>${escapeHtml(tempText)}</strong></div></div><p class="helper">Selected only after all four Janatics torque points met or exceeded the competitor values. Confirm fail-open/fail-close direction, operating time and valve coupling before quotation.</p>`;
+      result.innerHTML = `<h3>${escapeHtml(part)}</h3><div class="knowledge-chip">${escapeHtml(classification)}</div><p><strong>Competitor reference:</strong> ${escapeHtml(decoded.brand)} ${escapeHtml(decoded.model)} ${escapeHtml(decoded.spring)}</p><p><strong>Interface details:</strong> ${escapeHtml(interfaceDetails || `${best.flange} | ${best.drive} mm square`)}</p><div class="crossref-metrics"><div class="crossref-metric">Air stroke at 4 bar<strong>${best.airStart} → ${best.airEnd} Nm</strong></div><div class="crossref-metric">Spring stroke<strong>${best.springStart} → ${best.springEnd} Nm</strong></div><div class="crossref-metric">ISO 5211 / Drive<strong>${escapeHtml(best.flange)} / ${best.drive} mm</strong></div><div class="crossref-metric">Temperature<strong>${escapeHtml(tempText)}</strong></div></div><p class="helper">Selected only after all four Janatics torque points met or exceeded the competitor values. Confirm fail-open/fail-close direction, operating time and valve coupling before quotation.</p>`;
+      if (status) {
+        status.className = "status success";
+        status.textContent = "Janatics equivalent selected from verified dataset.";
+      }
+
+      syncGeneratedOutputFromQtaEquivalent(best.size, best.spring, tempCode);
+      toggleQtaCompetitorMakeOther();
     }
 
     function copyCrossrefResult() {
       if (!window.currentCrossrefText) return;
       navigator.clipboard.writeText(window.currentCrossrefText);
-      const status = document.getElementById("atDecodeStatus");
+      const status = getCrossrefStatusElement();
       if (status) { status.className="status success"; status.textContent="Equivalent selection copied."; }
     }
 
@@ -3659,6 +4067,7 @@
       renderKnowledgeForProduct(productKey);
       generatePartNumber();
       update3DPreview(productKey);
+      renderCrossrefWorkspace(productKey);
     }
 
     function getOptionsForField(productKey, fieldKey) {
@@ -3733,10 +4142,10 @@
       section.style.display = show ? "block" : "none";
     }
 
-    function filterBallOptions() {
-      const constructionSelect = document.getElementById("field_construction");
-      const connectionSelect = document.getElementById("field_connection");
-      const portSelect = document.getElementById("field_port");
+    function filterBallOptions(prefix = "field_") {
+      const constructionSelect = document.getElementById(`${prefix}construction`);
+      const connectionSelect = document.getElementById(`${prefix}connection`);
+      const portSelect = document.getElementById(`${prefix}port`);
       if (!constructionSelect || !connectionSelect || !portSelect) return;
 
       const allowedConnections = MASTER.ball.allowedConnectionByConstruction[constructionSelect.value] || [];
@@ -3758,10 +4167,10 @@
       if (!allowedPorts.includes(portSelect.value)) portSelect.value = allowedPorts[0];
     }
 
-    function filterPulsePorts() {
-      const bodyTypeSelect = document.getElementById("field_bodyType");
-      const portSelect = document.getElementById("field_port");
-      const voltageSelect = document.getElementById("field_voltage");
+    function filterPulsePorts(prefix = "field_") {
+      const bodyTypeSelect = document.getElementById(`${prefix}bodyType`);
+      const portSelect = document.getElementById(`${prefix}port`);
+      const voltageSelect = document.getElementById(`${prefix}voltage`);
       if (!bodyTypeSelect || !portSelect) return;
 
       const allowedPortByBodyType = {
@@ -3838,9 +4247,9 @@
       if (!allowedSprings.includes(springSelect.value)) springSelect.value = allowedSprings[0];
     }
 
-    function rebuildAccessoryModelOptions() {
-      const typeSelect = document.getElementById("field_accessoryType");
-      const modelSelect = document.getElementById("field_accessoryModel");
+    function rebuildAccessoryModelOptions(prefix = "field_") {
+      const typeSelect = document.getElementById(`${prefix}accessoryType`);
+      const modelSelect = document.getElementById(`${prefix}accessoryModel`);
       if (!typeSelect || !modelSelect) return;
 
       const previous = modelSelect.value;
@@ -3859,7 +4268,11 @@
 
     function selectedOption(productKey, fieldKey, code) {
       if (productKey === "qtaAccessory" && fieldKey === "accessoryModel") {
-        const type = document.getElementById("field_accessoryType").value;
+        const crossrefActive = getActiveCrossrefProductKey() === "qtaAccessory";
+        const typeSelect = crossrefActive
+          ? document.getElementById("crossref_accessoryType")
+          : document.getElementById("field_accessoryType");
+        const type = typeSelect ? typeSelect.value : "positionIndicator";
         return ACCESSORY_DATA[type].models.find(option => option.code === code);
       }
       const field = MASTER[productKey].fields.find(item => item.key === fieldKey);
@@ -4866,9 +5279,9 @@
       return `Actuator dependency: ${allowedLabels.join(" | ")}`;
     }
 
-    function filterAsvActuatorOptions() {
-      const actuatorSelect = document.getElementById("field_actuator");
-      const sizeSelect = document.getElementById("field_size");
+    function filterAsvActuatorOptions(prefix = "field_") {
+      const actuatorSelect = document.getElementById(`${prefix}actuator`);
+      const sizeSelect = document.getElementById(`${prefix}size`);
       if (!actuatorSelect || !sizeSelect) return;
 
       const allowedActuators = new Set(getAsvAllowedActuatorCodes({ size: sizeSelect.value }));
@@ -4888,9 +5301,9 @@
       }
     }
 
-    function filterAsvSizeOptions() {
-      const actuatorSelect = document.getElementById("field_actuator");
-      const sizeSelect = document.getElementById("field_size");
+    function filterAsvSizeOptions(prefix = "field_") {
+      const actuatorSelect = document.getElementById(`${prefix}actuator`);
+      const sizeSelect = document.getElementById(`${prefix}size`);
       if (!actuatorSelect || !sizeSelect) return;
 
       const allowedSizes = new Set(getAsvAllowedSizeCodes({ actuator: actuatorSelect.value }));
@@ -4905,24 +5318,24 @@
       }
     }
 
-    function filterAsvDependencies(changedField) {
+    function filterAsvDependencies(changedField, prefix = "field_") {
       if (changedField === "actuator") {
-        filterAsvSizeOptions();
-        filterAsvActuatorOptions();
+        filterAsvSizeOptions(prefix);
+        filterAsvActuatorOptions(prefix);
         return;
       }
 
-      filterAsvActuatorOptions();
+      filterAsvActuatorOptions(prefix);
 
       if (changedField === "size") {
-        const actuatorSelect = document.getElementById("field_actuator");
+        const actuatorSelect = document.getElementById(`${prefix}actuator`);
         if (actuatorSelect && !actuatorSelect.value) {
           const firstAllowedActuator = Array.from(actuatorSelect.options).find(option => option.value && !option.disabled && !option.hidden);
           actuatorSelect.value = firstAllowedActuator ? firstAllowedActuator.value : "";
         }
       }
 
-      filterAsvSizeOptions();
+      filterAsvSizeOptions(prefix);
     }
 
     function getPulseSealTemperatureBand(sealCode) {
@@ -6060,10 +6473,39 @@
         .replaceAll("'", "&#039;");
     }
 
+    function ensureStartupConfiguratorReady() {
+      const productSelect = document.getElementById("productType");
+      if (!productSelect) return;
+
+      if (!MASTER[productSelect.value]) {
+        productSelect.value = "ball";
+      }
+
+      const hasRenderedFields = document.querySelectorAll("#fieldHolder select").length > 0;
+      if (!hasRenderedFields) {
+        try {
+          renderForm();
+        } catch (error) {
+          // Keep startup resilient; a later retry may succeed once async state settles.
+        }
+      }
+
+      updateProductButtons(productSelect.value || "ball");
+
+      const configTab = document.getElementById("tabConfig");
+      if (configTab && configTab.getAttribute("aria-selected") !== "true") {
+        setWorkspaceTab("config");
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
       populateMediaOptions();
       setWorkspaceTab("config");
       decodeAirTorquePartNumber();
+      renderCrossrefWorkspace();
+      const productSelect = document.getElementById("productType");
+      if (productSelect) productSelect.value = "ball";
+      renderForm();
       setJanaticsSyncStatus(modelAlignmentLastStatus, "warn");
       await loadModelAlignmentStore();
       loadAssetResolverConfig();
@@ -6074,7 +6516,6 @@
           persistJanaticsAppState();
         });
       }
-      const productSelect = document.getElementById("productType");
       const axisPreset = document.getElementById("viewerAxisPreset");
       if (axisPreset) {
         axisPreset.addEventListener("change", () => {
@@ -6089,7 +6530,7 @@
         applySavedAppState(savedState);
       } else {
         if (productSelect) {
-          productSelect.value = "pulse";
+          productSelect.value = "ball";
         }
         renderForm();
         const bodyType = document.getElementById("field_bodyType");
@@ -6100,7 +6541,14 @@
         }
         generatePartNumber();
       }
+      ensureStartupConfiguratorReady();
+      setTimeout(ensureStartupConfiguratorReady, 250);
       initProductViewer();
+    });
+
+    window.addEventListener("load", () => {
+      setTimeout(ensureStartupConfiguratorReady, 0);
+      setTimeout(ensureStartupConfiguratorReady, 350);
     });
   </script>
 </body>

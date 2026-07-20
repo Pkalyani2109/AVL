@@ -3,7 +3,7 @@
 
 [[redirects]]
   from = "/"
-  to = "/index.html"
+  to = "/src/janatics_part_number_generator_all_products.html"
   status = 200
 
 [[redirects]]
@@ -13,5 +13,5 @@
 
 [[redirects]]
   from = "/dealer"
-  to = "/src-dealer-tracker/index.html"
+  to = "/src/janatics_part_number_generator_all_products.html"
   status = 200
