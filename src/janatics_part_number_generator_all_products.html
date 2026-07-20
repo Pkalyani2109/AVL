@@ -946,6 +946,19 @@
     .crossref-metric { border:1px solid #dbe6f2; border-radius:8px; background:#fff; padding:9px; font-size:12px; }
     .crossref-metric strong { display:block; margin-top:3px; color:#0f3558; font-size:14px; }
     @media (max-width:760px) { .crossref-grid,.crossref-metrics { grid-template-columns:1fr; } }
+
+    .term-section { margin-top: 16px; }
+    .term-table th, .term-table td { vertical-align: top; font-size: 12px; line-height: 1.45; }
+    .term-table th { white-space: nowrap; }
+    .term-term { font-weight: 900; color: var(--dark-blue); }
+
+    .nameplate-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .nameplate-card { border:1px solid #d7e7f5; border-radius:12px; background:#fbfdff; padding:12px; }
+    .nameplate-card h3 { margin:0 0 8px; color:var(--dark-blue); font-size:15px; }
+    .nameplate-sample { margin:0 0 8px; padding:8px 10px; border-radius:8px; background:#eff6ff; border:1px solid #cfe2ff; color:#123a61; font-weight:800; font-size:13px; word-break:break-word; }
+    .nameplate-list { margin:0; padding-left:18px; color:#334155; font-size:13px; line-height:1.45; }
+    .nameplate-list li { margin:3px 0; }
+    @media (max-width:900px) { .nameplate-grid { grid-template-columns:1fr; } }
   </style>
 </head>
 
@@ -981,6 +994,7 @@
           <button id="tabConfig" class="workspace-tab active" type="button" role="tab" aria-selected="true" aria-controls="configWorkspace" onclick="setWorkspaceTab('config')">Configuration</button>
           <button id="tabKnowledge" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="knowledgeWorkspace" onclick="setWorkspaceTab('knowledge')">Application Knowledge + FAQ</button>
           <button id="tabCrossref" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="crossrefWorkspace" onclick="setWorkspaceTab('crossref')">Competitor Equivalent</button>
+          <button id="tabNameplate" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="nameplateWorkspace" onclick="setWorkspaceTab('nameplate')" hidden>NamePlate</button>
         </div>
 
         <div id="configWorkspace" class="workspace-panel">
@@ -1122,6 +1136,23 @@
 
             <div class="section-title" style="margin-top:16px;">FAQ</div>
             <div id="knowledgeFaq" class="faq-wrap"></div>
+
+            <div id="knowledgeTerminologySection" class="term-section" style="display:none;">
+              <div class="section-title" style="margin-top:16px;">Key Terminology</div>
+              <div class="table-wrap" style="margin-top:0;">
+                <table class="term-table">
+                  <thead>
+                    <tr>
+                      <th>Term</th>
+                      <th>Meaning</th>
+                      <th>Why It Matters</th>
+                      <th>Typical Example</th>
+                    </tr>
+                  </thead>
+                  <tbody id="knowledgeTerminologyRows"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1140,6 +1171,94 @@
             <div class="button-row"><button type="button" onclick="runCrossrefEquivalent()">Find Janatics Equivalent</button><button type="button" class="secondary" onclick="copyCrossrefResult()">Copy Result</button></div>
             <div id="crossrefStatus" class="status warning">Choose a product family to begin.</div>
             <div id="crossrefResult" class="crossref-result" hidden></div>
+          </div>
+        </section>
+
+        <section id="nameplateWorkspace" class="card workspace-panel" hidden>
+          <div class="card-header">
+            <h2>NamePlate User Guide</h2>
+            <span>How to read product nameplate codes with sample formats for each product family.</span>
+          </div>
+          <div class="card-body">
+            <div class="nameplate-grid">
+              <article class="nameplate-card">
+                <h3>Ball Valve</h3>
+                <p class="nameplate-sample">Sample: FBV-1-1-63-1-1-T-1</p>
+                <ul class="nameplate-list">
+                  <li>FBV: Ball Valve series</li>
+                  <li>1: Construction type</li>
+                  <li>1: End connection</li>
+                  <li>63: Port size</li>
+                  <li>1: Pressure class</li>
+                  <li>1: Body / trim material</li>
+                  <li>T: Seat type</li>
+                  <li>1: Actuation type</li>
+                </ul>
+              </article>
+
+              <article class="nameplate-card">
+                <h3>Butterfly Valve</h3>
+                <p class="nameplate-sample">Sample: BF-1-1-69-1-1-P-1</p>
+                <ul class="nameplate-list">
+                  <li>BF: Butterfly Valve series</li>
+                  <li>1: Body design</li>
+                  <li>1: End connection</li>
+                  <li>69: Port size</li>
+                  <li>1: Pressure class</li>
+                  <li>1: Body / disc material</li>
+                  <li>P: Seat type</li>
+                  <li>1: Actuation type</li>
+                </ul>
+              </article>
+
+              <article class="nameplate-card">
+                <h3>QTA Actuator</h3>
+                <p class="nameplate-sample">Sample: QTA1-083-SA-08-S-01</p>
+                <ul class="nameplate-list">
+                  <li>QTA1: Actuator series</li>
+                  <li>083: Actuator size</li>
+                  <li>SA or DA: Function type</li>
+                  <li>08: Spring set code</li>
+                  <li>S: Temperature code</li>
+                  <li>01: Variable / revision code</li>
+                </ul>
+              </article>
+
+              <article class="nameplate-card">
+                <h3>QTA Accessories</h3>
+                <p class="nameplate-sample">Sample: JPI01-1</p>
+                <ul class="nameplate-list">
+                  <li>Prefix: Accessory family (JPI, JMOR, SQAD, STAD)</li>
+                  <li>Middle: Mechanical interface size group</li>
+                  <li>Suffix: Variant index for switch/sensor/bracket type</li>
+                </ul>
+              </article>
+
+              <article class="nameplate-card">
+                <h3>Pulse Valve</h3>
+                <p class="nameplate-sample">Sample: PV-02-06-N-A</p>
+                <ul class="nameplate-list">
+                  <li>PV: Pulse Valve series</li>
+                  <li>02: Body type</li>
+                  <li>06: Port size</li>
+                  <li>N: Seal type</li>
+                  <li>A: Coil voltage code (or 0 for pilot NIL)</li>
+                </ul>
+              </article>
+
+              <article class="nameplate-card">
+                <h3>Angle Seat Valve</h3>
+                <p class="nameplate-sample">Sample: ASV-1-1-2-63-1</p>
+                <ul class="nameplate-list">
+                  <li>ASV: Angle Seat Valve series</li>
+                  <li>1: Valve type (NO or NC family code)</li>
+                  <li>1: Body / actuator / seal pack</li>
+                  <li>2: Actuator size code</li>
+                  <li>63: DN / port size combination code</li>
+                  <li>1: End connection type</li>
+                </ul>
+              </article>
+            </div>
           </div>
         </section>
       </div>
@@ -1201,7 +1320,6 @@
           <div class="result-box model-preview-box">
             <small>3D Product Preview</small>
             <div class="model-preview-toolbar">
-              <button id="viewerModeBtn" type="button" class="secondary" onclick="toggleViewerMode()">View: Compact</button>
               <button type="button" class="secondary" onclick="resetModelView()">Reset View</button>
               <button type="button" class="secondary" onclick="toggleModelSpin()">Toggle Spin</button>
               <button type="button" class="secondary detail-only" onclick="applyViewerPreset('front')">Front</button>
@@ -1581,6 +1699,18 @@
         faq: [
           { q: "When should I use 3-piece over 2-piece?", a: "Use 3-piece when frequent cleaning or inline maintenance is expected, because it is easier to service." },
           { q: "Does media selection change part code?", a: "No. In this tool, media affects MOC guidance and review notes, while ordering code comes from selected ordering fields." }
+        ],
+        terminology: [
+          { term: "FB", meaning: "Full Bore (Full Port)", why: "Internal bore is close to pipe ID, so pressure drop is minimal.", example: "Used where pigging, full flow, or low pressure loss is required." },
+          { term: "RB", meaning: "Reduced Bore (Reduced Port)", why: "Smaller bore reduces body size and cost, but increases pressure drop.", example: "Common in utility lines where full-flow bore is not mandatory." },
+          { term: "API", meaning: "American Petroleum Institute standard reference", why: "Confirms valve design/testing aligns with recognized oil and gas standards.", example: "API 598 for testing, API 607 for fire-safe requirements." },
+          { term: "TMBV", meaning: "Three-piece Manual Ball Valve", why: "Defines body split style and manual operation without actuator.", example: "Preferred when frequent inline maintenance is expected." },
+          { term: "FBV", meaning: "Flanged Ball Valve", why: "Indicates flanged-end connection for bolted pipeline joints.", example: "Selected for higher sizes or plant piping with flange standards." },
+          { term: "MAST", meaning: "Mounting / Actuation standard reference tag", why: "Helps ensure valve top-mount and actuator interface compatibility.", example: "Used while selecting bracket/coupler for QTA actuator mounting." },
+          { term: "Differential Pressure", meaning: "Pressure difference across closed/open valve", why: "Directly affects operating torque and actuator sizing margin.", example: "Higher differential pressure typically needs higher break torque allowance." },
+          { term: "NPS", meaning: "Nominal Pipe Size", why: "Primary size reference used to align valve and pipeline dimensions.", example: "NPS 2 valve selected for 2-inch process line." },
+          { term: "CLASS", meaning: "Pressure class rating (ASME)", why: "Defines pressure-temperature envelope of flanged valve design.", example: "Class 150 used for standard service; Class 300 for higher ratings." },
+          { term: "End Connections", meaning: "Valve-to-pipe joint type", why: "Drives installation method, leakage integrity, and maintenance approach.", example: "Threaded (BSP/NPT), Flanged, Socket Weld, Butt Weld, TC-end." }
         ]
       },
       butterfly: {
@@ -2052,7 +2182,7 @@
     function setViewerPanelMode(mode, silent) {
       const panel = document.querySelector(".model-preview-box");
       const button = document.getElementById("viewerModeBtn");
-      const nextMode = mode === "detail" ? "detail" : "compact";
+      const nextMode = "compact";
       if (!panel) return;
 
       panel.classList.remove("compact", "detail");
@@ -2062,14 +2192,13 @@
       }
 
       if (!silent) {
-        set3dStatus(nextMode === "detail" ? "Detail view enabled." : "Compact view enabled.");
+        set3dStatus("Compact view enabled.");
       }
       persistJanaticsAppState();
     }
 
     function toggleViewerMode() {
-      const current = getViewerPanelMode();
-      setViewerPanelMode(current === "detail" ? "compact" : "detail");
+      setViewerPanelMode("compact");
     }
 
     function setJanaticsSyncStatus(message, tone) {
@@ -2294,7 +2423,7 @@
         if (axisPreset && savedState.viewerAxisPreset) {
           axisPreset.value = String(savedState.viewerAxisPreset);
         }
-        setViewerPanelMode(savedState.viewerPanelMode || "compact", true);
+        setViewerPanelMode("compact", true);
         if (mediaSelect && savedState.media) {
           mediaSelect.value = String(savedState.media);
         }
@@ -3388,16 +3517,20 @@
       const isConfig = tabKey === "config";
       const isKnowledge = tabKey === "knowledge";
       const isCrossref = tabKey === "crossref";
+      const isNameplate = tabKey === "nameplate";
       const configPanel = document.getElementById("configWorkspace");
       const knowledgePanel = document.getElementById("knowledgeWorkspace");
       const crossrefPanel = document.getElementById("crossrefWorkspace");
+      const nameplatePanel = document.getElementById("nameplateWorkspace");
       const tabConfig = document.getElementById("tabConfig");
       const tabKnowledge = document.getElementById("tabKnowledge");
       const tabCrossref = document.getElementById("tabCrossref");
+      const tabNameplate = document.getElementById("tabNameplate");
 
       if (configPanel) configPanel.hidden = !isConfig;
       if (knowledgePanel) knowledgePanel.hidden = !isKnowledge;
       if (crossrefPanel) crossrefPanel.hidden = !isCrossref;
+      if (nameplatePanel) nameplatePanel.hidden = !isNameplate;
 
       if (tabConfig) {
         tabConfig.classList.toggle("active", isConfig);
@@ -3410,6 +3543,10 @@
       if (tabCrossref) {
         tabCrossref.classList.toggle("active", isCrossref);
         tabCrossref.setAttribute("aria-selected", String(isCrossref));
+      }
+      if (tabNameplate) {
+        tabNameplate.classList.toggle("active", isNameplate);
+        tabNameplate.setAttribute("aria-selected", String(isNameplate));
       }
 
       if (isCrossref) renderCrossrefWorkspace();
@@ -3506,6 +3643,10 @@
       const product = MASTER[productKey];
       if (!product) return "";
 
+      if (["ball", "butterfly", "pulse", "asv", "qtaAccessory"].includes(productKey)) {
+        return renderCrossrefReferenceOnlyFields(productKey);
+      }
+
       const fieldKeys = product.fields.map(field => field.key);
       const previewValues = {};
       const coreFields = fieldKeys.map(fieldKey => renderCrossrefField(productKey, fieldKey, previewValues)).join("");
@@ -3513,6 +3654,64 @@
         return `${renderCrossrefCompetitorDetailsFields()}${coreFields}`;
       }
       return coreFields;
+    }
+
+    function getCrossrefMakeOptions(productKey) {
+      if (productKey === "ball") {
+        return ["Bray", "Keystone", "Aira", "Uflow", "Festo", "Other"];
+      }
+      if (productKey === "butterfly") {
+        return ["Bray", "Keystone", "Aira", "Uflow", "Festo", "Other"];
+      }
+      if (productKey === "asv") {
+        return ["Aira", "Uflow", "Festo", "Other"];
+      }
+      if (productKey === "pulse") {
+        return ["Rotex", "Asco", "Manik", "Uflow", "Aira", "Other"];
+      }
+      if (productKey === "qtaAccessory") {
+        return ["Aira", "Uflow", "Festo", "Other"];
+      }
+      return ["Other"];
+    }
+
+    function renderCrossrefReferenceOnlyFields(productKey) {
+      const makeOptions = getCrossrefMakeOptions(productKey);
+      const selectedMake = String(document.getElementById("crossref_competitorMakeRef")?.value || makeOptions[0] || "Other");
+      const model = String(document.getElementById("crossref_competitorModelRef")?.value || "");
+      const description = String(document.getElementById("crossref_competitorDescriptionRef")?.value || "");
+      const makeOther = String(document.getElementById("crossref_competitorMakeOtherRef")?.value || "");
+
+      return `
+        <div>
+          <label for="crossref_competitorMakeRef">Competitor Make</label>
+          <select id="crossref_competitorMakeRef" onchange="toggleCrossrefMakeOtherRef(); runCrossrefEquivalent()">
+            ${makeOptions.map(item => `<option value="${escapeHtml(item)}"${selectedMake === item ? " selected" : ""}>${escapeHtml(item)}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label for="crossref_competitorMakeOtherRef">Competitor Make (Free text)</label>
+          <input id="crossref_competitorMakeOtherRef" type="text" placeholder="Enter make if not listed" value="${escapeHtml(makeOther)}" oninput="runCrossrefEquivalent()" />
+        </div>
+        <div>
+          <label for="crossref_competitorModelRef">Competitor Model No</label>
+          <input id="crossref_competitorModelRef" type="text" placeholder="Model or part number" value="${escapeHtml(model)}" oninput="runCrossrefEquivalent()" />
+        </div>
+        <div class="wide">
+          <label for="crossref_competitorDescriptionRef">Competitor Description</label>
+          <input id="crossref_competitorDescriptionRef" type="text" placeholder="Free text description" value="${escapeHtml(description)}" oninput="runCrossrefEquivalent()" />
+        </div>
+      `;
+    }
+
+    function toggleCrossrefMakeOtherRef() {
+      const makeSelect = document.getElementById("crossref_competitorMakeRef");
+      const freeText = document.getElementById("crossref_competitorMakeOtherRef");
+      if (!freeText) return;
+      const isOther = makeSelect && makeSelect.value === "Other";
+      freeText.disabled = !isOther;
+      freeText.style.opacity = isOther ? "1" : "0.65";
+      if (!isOther) freeText.value = "";
     }
 
     function getQtaCompetitorMakeLabel() {
@@ -3556,15 +3755,18 @@
     }
 
     function getCrossrefCompetitorMeta(productKey) {
-      if (!(productKey === "ball" || productKey === "butterfly")) {
-        return { make: "", model: "", description: "" };
+      if (["ball", "butterfly", "pulse", "asv", "qtaAccessory"].includes(productKey)) {
+        const makeSelect = document.getElementById("crossref_competitorMakeRef");
+        const makeOther = String(document.getElementById("crossref_competitorMakeOtherRef")?.value || "").trim();
+        const selectedMake = String(makeSelect ? makeSelect.value : "").trim();
+        return {
+          make: selectedMake === "Other" ? makeOther : selectedMake,
+          model: String(document.getElementById("crossref_competitorModelRef")?.value || "").trim(),
+          description: String(document.getElementById("crossref_competitorDescriptionRef")?.value || "").trim()
+        };
       }
 
-      return {
-        make: String(document.getElementById("crossref_competitorMake")?.value || "").trim(),
-        model: String(document.getElementById("crossref_competitorModel")?.value || "").trim(),
-        description: String(document.getElementById("crossref_competitorDescription")?.value || "").trim()
-      };
+      return { make: "", model: "", description: "" };
     }
 
     function renderCrossrefField(productKey, fieldKey, previewValues) {
@@ -3631,6 +3833,43 @@
       const productKey = getActiveCrossrefProductKey();
       if (productKey === "qta") {
         decodeAirTorquePartNumber();
+        return;
+      }
+
+      if (["ball", "butterfly", "pulse", "asv", "qtaAccessory"].includes(productKey)) {
+        const status = document.getElementById("crossrefStatus");
+        const result = document.getElementById("crossrefResult");
+        const competitorMeta = getCrossrefCompetitorMeta(productKey);
+        const productLabel = (MASTER[productKey] && MASTER[productKey].model && MASTER[productKey].model.label) ? MASTER[productKey].model.label : "Product";
+        const hasContent = !!(competitorMeta.make || competitorMeta.model || competitorMeta.description);
+
+        const metaParts = [];
+        if (competitorMeta.make) metaParts.push(`Make: ${competitorMeta.make}`);
+        if (competitorMeta.model) metaParts.push(`Model: ${competitorMeta.model}`);
+        if (competitorMeta.description) metaParts.push(`Description: ${competitorMeta.description}`);
+
+        if (status) {
+          status.className = hasContent ? "status success" : "status warning";
+          status.textContent = hasContent
+            ? "Reference captured. Use Configuration tab to generate Janatics code."
+            : "Enter competitor make/model/description to capture reference.";
+        }
+
+        if (result) {
+          result.hidden = false;
+          result.innerHTML = `
+            <h3>${escapeHtml(productLabel)} competitor reference</h3>
+            <div class="knowledge-chip">Reference-only mode</div>
+            <p><strong>Competitor reference:</strong> ${escapeHtml(metaParts.join(" | ") || "Not provided")}</p>
+            <p class="helper">Product attributes are intentionally hidden here. Capture competitor details and use the Configuration tab to finalize Janatics part number and description.</p>
+          `;
+        }
+
+        window.currentCrossrefText = hasContent
+          ? `${productLabel} competitor reference -> ${metaParts.join(" | ")}`
+          : `${productLabel} competitor reference -> Not provided`;
+
+        toggleCrossrefMakeOtherRef();
         return;
       }
 
@@ -3908,6 +4147,8 @@
       const faqWrap = document.getElementById("knowledgeFaq");
       const typeSection = document.getElementById("knowledgeTypeSection");
       const typeRows = document.getElementById("knowledgeTypeRows");
+      const terminologySection = document.getElementById("knowledgeTerminologySection");
+      const terminologyRows = document.getElementById("knowledgeTerminologyRows");
 
       if (chip) chip.textContent = `Product: ${knowledge.label}`;
       if (intro) intro.textContent = knowledge.intro;
@@ -3970,6 +4211,36 @@
             tr.appendChild(suitedCell);
 
             typeRows.appendChild(tr);
+          });
+        }
+      }
+
+      if (terminologySection && terminologyRows) {
+        terminologyRows.innerHTML = "";
+        const hasTerminology = Array.isArray(knowledge.terminology) && knowledge.terminology.length > 0;
+        terminologySection.style.display = hasTerminology ? "block" : "none";
+        if (hasTerminology) {
+          knowledge.terminology.forEach(item => {
+            const tr = document.createElement("tr");
+
+            const termCell = document.createElement("td");
+            termCell.className = "term-term";
+            termCell.textContent = item.term;
+            tr.appendChild(termCell);
+
+            const meaningCell = document.createElement("td");
+            meaningCell.textContent = item.meaning;
+            tr.appendChild(meaningCell);
+
+            const whyCell = document.createElement("td");
+            whyCell.textContent = item.why;
+            tr.appendChild(whyCell);
+
+            const exampleCell = document.createElement("td");
+            exampleCell.textContent = item.example;
+            tr.appendChild(exampleCell);
+
+            terminologyRows.appendChild(tr);
           });
         }
       }
