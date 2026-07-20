@@ -937,6 +937,15 @@
       font-weight: 800;
       padding: 7px 10px;
     }
+
+    .crossref-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .crossref-grid .wide { grid-column:1 / -1; }
+    .crossref-result { margin-top:16px; border:1px solid #bfdbfe; border-radius:12px; background:#f8fbff; padding:14px; }
+    .crossref-result h3 { margin:0 0 10px; color:var(--dark-blue); }
+    .crossref-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:10px; }
+    .crossref-metric { border:1px solid #dbe6f2; border-radius:8px; background:#fff; padding:9px; font-size:12px; }
+    .crossref-metric strong { display:block; margin-top:3px; color:#0f3558; font-size:14px; }
+    @media (max-width:760px) { .crossref-grid,.crossref-metrics { grid-template-columns:1fr; } }
   </style>
 </head>
 
@@ -971,6 +980,7 @@
         <div class="workspace-tabs" role="tablist" aria-label="Workspace sections">
           <button id="tabConfig" class="workspace-tab active" type="button" role="tab" aria-selected="true" aria-controls="configWorkspace" onclick="setWorkspaceTab('config')">Configuration</button>
           <button id="tabKnowledge" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="knowledgeWorkspace" onclick="setWorkspaceTab('knowledge')">Application Knowledge + FAQ</button>
+          <button id="tabCrossref" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="crossrefWorkspace" onclick="setWorkspaceTab('crossref')">Competitor Equivalent</button>
         </div>
 
         <div id="configWorkspace" class="workspace-panel">
@@ -1112,6 +1122,29 @@
 
             <div class="section-title" style="margin-top:16px;">FAQ</div>
             <div id="knowledgeFaq" class="faq-wrap"></div>
+          </div>
+        </section>
+
+        <section id="crossrefWorkspace" class="card workspace-panel" hidden>
+          <div class="card-header">
+            <h2>Competitor Actuator Equivalent</h2>
+            <span>Phase 1: Air Torque (AT) spring-return actuator to Janatics QTA.</span>
+          </div>
+          <div class="card-body">
+            <div class="crossref-grid">
+              <div class="wide">
+                <label for="atPartNumber">Air Torque part number</label>
+                <input id="atPartNumber" type="text" value="FA AT301U S08 A HT-F07/10-22DS" placeholder="Example: FA AT301U S08 A HT-F07/10-22DS" oninput="decodeAirTorquePartNumber()" />
+                <div class="helper">Spaces and hyphens are optional. The decoder reads AT model, spring quantity, temperature, flange and drive.</div>
+              </div>
+              <div><label for="atAirStart">Air start at 4 bar (Nm)</label><input id="atAirStart" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
+              <div><label for="atAirEnd">Air end at 4 bar (Nm)</label><input id="atAirEnd" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
+              <div><label for="atSpringStart">Spring start at 4 bar (Nm)</label><input id="atSpringStart" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
+              <div><label for="atSpringEnd">Spring end at 4 bar (Nm)</label><input id="atSpringEnd" type="number" step="0.1" oninput="selectAtEquivalent()" /></div>
+            </div>
+            <div class="button-row"><button type="button" onclick="decodeAirTorquePartNumber()">Find Janatics Equivalent</button><button type="button" class="secondary" onclick="copyCrossrefResult()">Copy Result</button></div>
+            <div id="atDecodeStatus" class="status warning">Enter an Air Torque part number.</div>
+            <div id="atCrossrefResult" class="crossref-result" hidden></div>
           </div>
         </section>
       </div>
@@ -1383,6 +1416,24 @@
       { size: "300", m: "46", n: "50", z: "760", i: "-", j: "Ø165", port: "G1/2''", flange: "F16" },
       { size: "350", m: "46", n: "50", z: "920", i: "Ø165", j: "Ø254", port: "G1/2''", flange: "F16/F25" },
       { size: "400", m: "46", n: "50", z: "940", i: "Ø165", j: "Ø254", port: "G1/2''", flange: "F16/F25" }
+    ];
+
+    // Verified against Air Torque Upgrade and Janatics QTA catalogues at 4 bar.
+    // The structure is brand-neutral so additional competitor catalogues can be added later.
+    const AIR_TORQUE_4BAR = {
+      "AT251U-S08": { airStart:43.9, airEnd:27, springStart:46.2, springEnd:29.3, flange:"F05/F07", drive:17 },
+      "AT301U-S08": { airStart:65.8, airEnd:43.3, springStart:63, springEnd:40.5, flange:"F07/F10", drive:22 },
+      "AT551U-S08": { airStart:360, airEnd:234, springStart:379, springEnd:253, flange:"F14", drive:36 }
+    };
+
+    const JANATICS_CROSSREF_CANDIDATES = [
+      { size:"092", spring:"07", flange:"F05/F07", drive:17, airStart:57.5, airEnd:42.1, springStart:48.1, springEnd:32.7 },
+      { size:"092", spring:"08", flange:"F05/F07", drive:17, airStart:52.9, airEnd:35.2, springStart:55, springEnd:37.3 },
+      { size:"105", spring:"07", flange:"F07/F10", drive:22, airStart:87.9, airEnd:63.4, springStart:68.9, springEnd:44.3 },
+      { size:"105", spring:"08", flange:"F07/F10", drive:22, airStart:81.6, airEnd:53.5, springStart:78.7, springEnd:50.6 },
+      { size:"190", spring:"06", flange:"F14", drive:36, airStart:611, airEnd:480, springStart:371, springEnd:240 },
+      { size:"190", spring:"07", flange:"F14", drive:36, airStart:571, airEnd:418, springStart:433, springEnd:280 },
+      { size:"190", spring:"08", flange:"F14", drive:36, airStart:531, airEnd:356, springStart:495, springEnd:320 }
     ];
 
     const BUTTERFLY_ACTUATOR_SIZING = {
@@ -1832,7 +1883,7 @@
             { code: "N", label: "NBR" }, { code: "E", label: "EPDM" }, { code: "V", label: "FKM / VITON" }
           ]},
           { key: "voltage", label: "Voltage", options: [
-            { code: "A", label: "220 V AC" }, { code: "W", label: "24 V DC" }
+            { code: "A", label: "220 V AC" }, { code: "W", label: "24 V DC" }, { code: "0", label: "NIL" }
           ]}
         ]
       },
@@ -1908,6 +1959,7 @@
       "2": "4.2 to 96",
       "3": "4.2 to 80"
     };
+    const PULSE_PILOT_BODY_TYPES = ["06", "07", "08", "09", "10"];
     const PULSE_ORIFICE_BY_PORT = {
       "05": "20",
       "06": "25",
@@ -3334,23 +3386,105 @@
     }
 
     function setWorkspaceTab(tabKey) {
-      const isConfig = tabKey !== "knowledge";
+      const isConfig = tabKey === "config";
+      const isKnowledge = tabKey === "knowledge";
+      const isCrossref = tabKey === "crossref";
       const configPanel = document.getElementById("configWorkspace");
       const knowledgePanel = document.getElementById("knowledgeWorkspace");
+      const crossrefPanel = document.getElementById("crossrefWorkspace");
       const tabConfig = document.getElementById("tabConfig");
       const tabKnowledge = document.getElementById("tabKnowledge");
+      const tabCrossref = document.getElementById("tabCrossref");
 
       if (configPanel) configPanel.hidden = !isConfig;
-      if (knowledgePanel) knowledgePanel.hidden = isConfig;
+      if (knowledgePanel) knowledgePanel.hidden = !isKnowledge;
+      if (crossrefPanel) crossrefPanel.hidden = !isCrossref;
 
       if (tabConfig) {
         tabConfig.classList.toggle("active", isConfig);
         tabConfig.setAttribute("aria-selected", String(isConfig));
       }
       if (tabKnowledge) {
-        tabKnowledge.classList.toggle("active", !isConfig);
-        tabKnowledge.setAttribute("aria-selected", String(!isConfig));
+        tabKnowledge.classList.toggle("active", isKnowledge);
+        tabKnowledge.setAttribute("aria-selected", String(isKnowledge));
       }
+      if (tabCrossref) {
+        tabCrossref.classList.toggle("active", isCrossref);
+        tabCrossref.setAttribute("aria-selected", String(isCrossref));
+      }
+    }
+
+    function decodeAirTorquePartNumber() {
+      const raw = String(document.getElementById("atPartNumber")?.value || "").toUpperCase().trim();
+      const model = raw.match(/AT\s*([0-9]{3,4})U?/);
+      const spring = raw.match(/S\s*(0?[5-9]|1[0-6])/);
+      const flange = raw.match(/F(0?\d{1,2})(?:\s*[+\/]\s*F?(0?\d{1,2}))?/);
+      const drive = raw.match(/(?:-|\s)(\d{1,2})DS\b/);
+      const status = document.getElementById("atDecodeStatus");
+      if (!model || !spring) {
+        if (status) { status.className = "status danger"; status.textContent = "Part number not recognized. Enter at least the AT model and S spring code."; }
+        document.getElementById("atCrossrefResult").hidden = true;
+        return;
+      }
+      const modelCode = `AT${model[1]}U`;
+      const springCode = `S${String(spring[1]).padStart(2,"0")}`;
+      const key = `${modelCode}-${springCode}`;
+      const verified = AIR_TORQUE_4BAR[key];
+      const parsedFlange = flange ? (flange[2] ? `F${flange[1].padStart(2,"0")}/F${flange[2].padStart(2,"0")}` : `F${flange[1].padStart(2,"0")}`) : "";
+      window.currentAtDecode = {
+        brand:"Air Torque", model:modelCode, spring:springCode,
+        temperature:/\bHT\b/.test(raw) ? "H" : (/\bLL?T\b/.test(raw) ? "L" : "S"),
+        flange:parsedFlange || verified?.flange || "", drive:Number(drive?.[1] || verified?.drive || 0)
+      };
+      if (verified) {
+        [["atAirStart",verified.airStart],["atAirEnd",verified.airEnd],["atSpringStart",verified.springStart],["atSpringEnd",verified.springEnd]].forEach(([id,value]) => { const el=document.getElementById(id); if(el) el.value=value; });
+        if (status) { status.className = "status success"; status.textContent = `Decoded ${modelCode} ${springCode}. Verified 4-bar catalogue data loaded.`; }
+      } else if (status) {
+        status.className = "status warning";
+        status.textContent = `Decoded ${modelCode} ${springCode}. Enter its four 4-bar torque values to complete selection; this configuration is not yet in the verified starter dataset.`;
+      }
+      selectAtEquivalent();
+    }
+
+    function selectAtEquivalent() {
+      const decoded = window.currentAtDecode;
+      if (!decoded) return;
+      const required = {
+        airStart:Number(document.getElementById("atAirStart")?.value), airEnd:Number(document.getElementById("atAirEnd")?.value),
+        springStart:Number(document.getElementById("atSpringStart")?.value), springEnd:Number(document.getElementById("atSpringEnd")?.value)
+      };
+      if (Object.values(required).some(value => !Number.isFinite(value) || value <= 0)) return;
+      const normalizeFlange = value => String(value).replaceAll("+","/").toUpperCase();
+      const compatible = JANATICS_CROSSREF_CANDIDATES.filter(item =>
+        (!decoded.flange || normalizeFlange(item.flange) === normalizeFlange(decoded.flange)) &&
+        (!decoded.drive || item.drive === decoded.drive) &&
+        item.airStart >= required.airStart && item.airEnd >= required.airEnd &&
+        item.springStart >= required.springStart && item.springEnd >= required.springEnd
+      ).sort((a,b) => Math.min(a.airStart,a.airEnd,a.springStart,a.springEnd)-Math.min(b.airStart,b.airEnd,b.springStart,b.springEnd));
+      const result = document.getElementById("atCrossrefResult");
+      const status = document.getElementById("atDecodeStatus");
+      if (!compatible.length) {
+        result.hidden = false;
+        result.innerHTML = `<h3>Engineering review required</h3><p>No verified candidate currently satisfies all four torque points together with ${escapeHtml(decoded.flange || "the specified flange")} and ${decoded.drive || "the specified"} mm drive.</p>`;
+        if (status) { status.className="status danger"; status.textContent="No standard equivalent found in the verified dataset."; }
+        return;
+      }
+      const best = compatible[0];
+      const tempCode = decoded.temperature || "S";
+      const part = `QTA1${best.size}SA${best.spring}${tempCode}-01`;
+      const tempText = tempCode === "H" ? "High temperature (-15°C to +150°C)" : tempCode === "L" ? "Low temperature" : "Standard temperature";
+      const direct = best.flange === decoded.flange && best.drive === decoded.drive;
+      const classification = direct ? "Direct interface equivalent" : "Equivalent with interface confirmation";
+      window.currentCrossrefText = `${decoded.brand} ${decoded.model} ${decoded.spring} -> Janatics ${part}; ${classification}; 4 bar air ${best.airStart}/${best.airEnd} Nm; spring ${best.springStart}/${best.springEnd} Nm; ${best.flange}; ${best.drive} mm drive; ${tempText}. Confirm fail direction and operating time.`;
+      result.hidden = false;
+      result.innerHTML = `<h3>${escapeHtml(part)}</h3><div class="knowledge-chip">${escapeHtml(classification)}</div><div class="crossref-metrics"><div class="crossref-metric">Air stroke at 4 bar<strong>${best.airStart} → ${best.airEnd} Nm</strong></div><div class="crossref-metric">Spring stroke<strong>${best.springStart} → ${best.springEnd} Nm</strong></div><div class="crossref-metric">ISO 5211 / Drive<strong>${escapeHtml(best.flange)} / ${best.drive} mm</strong></div><div class="crossref-metric">Temperature<strong>${escapeHtml(tempText)}</strong></div></div><p class="helper">Selected only after all four Janatics torque points met or exceeded the competitor values. Confirm fail-open/fail-close direction, operating time and valve coupling before quotation.</p>`;
+    }
+
+    function copyCrossrefResult() {
+      if (!window.currentCrossrefText) return;
+      navigator.clipboard.writeText(window.currentCrossrefText);
+      const status = document.getElementById("atDecodeStatus");
+      if (status) { status.className="status success"; status.textContent="Equivalent selection copied."; }
     }
 
     function renderKnowledgeForProduct(productKey) {
@@ -3623,6 +3757,7 @@
     function filterPulsePorts() {
       const bodyTypeSelect = document.getElementById("field_bodyType");
       const portSelect = document.getElementById("field_port");
+      const voltageSelect = document.getElementById("field_voltage");
       if (!bodyTypeSelect || !portSelect) return;
 
       const allowedPortByBodyType = {
@@ -3645,6 +3780,31 @@
         option.hidden = !allowed;
       });
       if (!allowedPorts.includes(portSelect.value)) portSelect.value = allowedPorts[0] || "";
+
+      if (!voltageSelect) return;
+
+      const allVoltageOptions = (MASTER.pulse.fields.find(field => field.key === "voltage") || {}).options || [];
+      const pilotVoltageOptions = allVoltageOptions.filter(option => option.code === "0");
+      const solenoidVoltageOptions = allVoltageOptions.filter(option => option.code !== "0");
+      const isPilotOperated = PULSE_PILOT_BODY_TYPES.includes(bodyTypeSelect.value);
+      const nextVoltageOptions = isPilotOperated ? pilotVoltageOptions : solenoidVoltageOptions;
+      const previousVoltage = voltageSelect.value;
+
+      voltageSelect.innerHTML = "";
+      nextVoltageOptions.forEach(optionData => {
+        const option = document.createElement("option");
+        option.value = optionData.code;
+        option.textContent = `${optionData.code} - ${optionData.label}`;
+        voltageSelect.appendChild(option);
+      });
+
+      if (isPilotOperated) {
+        voltageSelect.value = "0";
+      } else if (nextVoltageOptions.some(option => option.code === previousVoltage) && previousVoltage !== "0") {
+        voltageSelect.value = previousVoltage;
+      } else {
+        voltageSelect.value = nextVoltageOptions[0] ? nextVoltageOptions[0].code : "";
+      }
     }
 
     function filterQtaOptions() {
@@ -3765,7 +3925,9 @@
 
         const allowedPorts = allowedPortByBodyType[values.bodyType] || [];
         if (!allowedPorts.includes(values.port)) errors.push("Selected Pulse Valve port size is not available for this body type.");
-        if (["06","07","08","09","10"].includes(values.bodyType)) notes.push("Pilot type selected; confirm whether voltage code is required in final ERP release.");
+        if (PULSE_PILOT_BODY_TYPES.includes(values.bodyType) && values.voltage !== "0") {
+          errors.push("Pilot operated Pulse Valve body types must use voltage code 0 - NIL.");
+        }
         if (values.seal === "E" || values.seal === "V") notes.push("EPDM / FKM seal to be confirmed against temperature and media.");
       }
 
@@ -5897,6 +6059,7 @@
     document.addEventListener("DOMContentLoaded", async () => {
       populateMediaOptions();
       setWorkspaceTab("config");
+      decodeAirTorquePartNumber();
       setJanaticsSyncStatus(modelAlignmentLastStatus, "warn");
       await loadModelAlignmentStore();
       loadAssetResolverConfig();
