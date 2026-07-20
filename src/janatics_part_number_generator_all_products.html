@@ -1494,7 +1494,7 @@
     const QTA_SR_TORQUE_4BAR = {
       "052": { "06":[10.9,8.5], "07":[9.8,7.3], "08":[9.2,6], "09":[8.3,4.8], "10":[7.4,3.6], "11":[6.6,2.3] },
       "063": { "05":[22.3,14.9], "06":[20.9,16.6], "07":[19.5,14.5], "08":[18.2,12.4], "09":[16.8,10.4], "10":[15.4,8.2] },
-      "075": { "05":[29.5,25.7], "06":[27.4,22.7], "07":[25.3,19.9], "08":[23.1,16.9], "09":[21,14.1], "10":[19,11.1] },
+      "075": { "05":[29.5,25.7], "06":[27.4,22.7], "07":[25.3,19.9], "08":[23.1,16.9], "09":[21,14.1], "10":[19,11.1], "11":[21.6,14.6] },
       "083": { "05":[46.8,39.7], "06":[43.7,35.1], "07":[40.5,30.5], "08":[37.4,25.8], "09":[34.2,21.3], "10":[31,16.6] },
       "092": { "05":[66.8,55.9], "06":[62.2,49], "07":[57.5,42.1], "08":[52.9,35.2], "09":[48.2,28.4], "10":[43.6,21.5] },
       "105": { "05":[100.6,83], "06":[94.2,73.2], "07":[87.9,63.4], "08":[81.6,53.5], "09":[75.3,43.7], "10":[68.9,33.4] },
@@ -1508,6 +1508,12 @@
       "300": { "07":[1916,1402], "08":[1754,1166], "09":[1592,930], "10":[1430,695] },
       "350": { "07":[2745,1922], "08":[2484,1544], "09":[2224,1165], "10":[1963,787] },
       "400": { "09":[3887,2396], "10":[3595,1939], "11":[3303,1482], "12":[3012,1025] }
+    };
+
+    const SA_TORQUE_AT_5BAR = {
+      "075": {
+        "11": { pneumaticStart: 27, pneumaticEnd: 18.3, springStart: 31.9, springEnd: 23.2 }
+      }
     };
 
     const QTA_DIMENSIONS = [
@@ -4507,15 +4513,19 @@
 
       let allowedSprings = [];
       if (functionSelect.value === "DA") allowedSprings = ["00"];
-      else if (size === "400") allowedSprings = ["07","08","09","10","11","12","13","14","15","16"];
-      else allowedSprings = ["05","06","07","08","09","10","11","12"];
+      else {
+        const srMap = QTA_SR_TORQUE_4BAR[size] || {};
+        allowedSprings = Object.keys(srMap)
+          .filter(key => /^\d{2}$/.test(key))
+          .sort((a, b) => Number(a) - Number(b));
+      }
 
       Array.from(springSelect.options).forEach(option => {
         const allowed = allowedSprings.includes(option.value);
         option.disabled = !allowed;
         option.hidden = !allowed;
       });
-      if (!allowedSprings.includes(springSelect.value)) springSelect.value = allowedSprings[0];
+      if (!allowedSprings.includes(springSelect.value)) springSelect.value = allowedSprings[0] || "";
     }
 
     function rebuildAccessoryModelOptions(prefix = "field_") {
@@ -4588,6 +4598,12 @@
         }
         if (values.functionType === "DA" && values.spring !== "00") errors.push("Double Acting QTA must use spring configuration 00.");
         if (values.functionType === "SA" && values.spring === "00") errors.push("Single Acting / Spring Return QTA requires spring configuration 05 to 16.");
+        if (values.functionType === "SA") {
+          const srMap = QTA_SR_TORQUE_4BAR[values.size] || {};
+          if (!srMap[values.spring]) {
+            errors.push("Selected spring configuration is not available for this QTA size in SA execution.");
+          }
+        }
         if (values.functionType === "SA" && !getQtaTorqueText(values).available) notes.push("4 bar torque is not listed for this selected spring quantity; confirm with factory before release.");
         if (values.temperature === "L" || values.temperature === "H") notes.push("Low / High temperature execution to be confirmed with seals and application conditions.");
       }
@@ -4769,12 +4785,23 @@
       if (validation.errors.length > 0) {
         statusBox.className = "status invalid";
         statusBox.textContent = "Invalid combination. Please review selected options.";
-      } else if (validation.notes.length > 0) {
-        statusBox.className = "status warning";
-        statusBox.textContent = "Part number generated with review notes.";
+      } else if (productKey === "ball" || productKey === "butterfly") {
+        const sizing = productKey === "ball" ? getBallActuatorSizing(values) : getButterflyActuatorSizing(values);
+        if (sizing && values.actuation === "2" && Number(sizing.fos) < 1.25) {
+          statusBox.className = "status warning";
+          statusBox.textContent = "Part number generated, but spring-end FOS is below 1.25.";
+        } else {
+          statusBox.className = "status valid";
+          statusBox.textContent = "Valid standard part number generated.";
+        }
       } else {
-        statusBox.className = "status valid";
-        statusBox.textContent = "Valid standard part number generated.";
+        if (validation.notes.length > 0) {
+          statusBox.className = "status warning";
+          statusBox.textContent = "Part number generated with review notes.";
+        } else {
+          statusBox.className = "status valid";
+          statusBox.textContent = "Valid standard part number generated.";
+        }
       }
 
       renderReviewNotes(validation);
@@ -4966,7 +4993,7 @@
       const sizeData = QTA_SR_TORQUE_4BAR[values.size] || {};
       const value = sizeData[values.spring];
       if (value) {
-        return { available: true, text: `Output torque at 4 bar: Star ${value[0]} Nm / End ${value[1]} Nm` };
+        return { available: true, text: `Output torque at 4 bar: Start ${value[0]} Nm / End ${value[1]} Nm` };
       }
       return { available: false, text: "Output torque at 4 bar: Not listed for selected spring quantity" };
     }
@@ -4989,42 +5016,115 @@
     }
 
     function getSingleActingSizingData(row, referenceTorque) {
-      const size = actuatorSizeCode(row.qtaSr);
-      const srMap = QTA_SR_TORQUE_4BAR[size] || {};
-      let usedSpring = row.srSpring;
-      let srRow = srMap[usedSpring] || null;
+      const baseSize = actuatorSizeCode(row.qtaSr);
+      const preferredSpring = String(row.srSpring || "");
+      const qtaSrBySize = Object.keys(QTA_SR_TORQUE_4BAR)
+        .map(code => ({ code, num: Number(code) }))
+        .filter(item => Number.isFinite(item.num))
+        .sort((a, b) => a.num - b.num);
 
-      if (!srRow) {
-        const availableSprings = Object.keys(srMap)
-          .map(key => ({ key, numeric: Number(key) }))
-          .filter(item => Number.isFinite(item.numeric))
-          .sort((a, b) => a.numeric - b.numeric);
+      const baseEntry = qtaSrBySize.find(item => item.code === baseSize);
+      if (!baseEntry) return null;
 
-        if (!availableSprings.length) return null;
+      const getCandidateListForSize = (sizeCode) => {
+        const srMap = QTA_SR_TORQUE_4BAR[sizeCode] || {};
+        return Object.keys(srMap)
+          .map(key => {
+            const srRow = srMap[key];
+            if (!Array.isArray(srRow)) return null;
 
-        const requested = Number(row.srSpring);
-        const nearest = availableSprings.reduce((best, current) => {
-          if (!best) return current;
-          return Math.abs(current.numeric - requested) < Math.abs(best.numeric - requested) ? current : best;
-        }, null);
+            const override = ((SA_TORQUE_AT_5BAR[sizeCode] || {})[key]) || null;
+            const pneumaticStart = override ? Number(override.pneumaticStart) : Number(srRow[0]) * 1.25;
+            const pneumaticEnd = override ? Number(override.pneumaticEnd) : Number(srRow[1]) * 1.25;
+            const springStart = override ? Number(override.springStart) : Number(srRow[0]) * 1.25;
+            const springEnd = override ? Number(override.springEnd) : Number(srRow[1]) * 1.25;
 
-        usedSpring = nearest.key;
-        srRow = srMap[usedSpring] || null;
+            const pneumaticStartPass = pneumaticStart > referenceTorque;
+            const pneumaticEndPass = pneumaticEnd >= referenceTorque;
+            const springStartPass = springStart > referenceTorque;
+            const springEndPass = springEnd >= referenceTorque;
+            const fosPneumaticEnd = pneumaticEnd / referenceTorque;
+            const fosSpringEnd = springEnd / referenceTorque;
+            return {
+              sizeCode,
+              springCode: key,
+              pneumaticStart,
+              pneumaticEnd,
+              springStart,
+              springEnd,
+              pneumaticStartPass,
+              pneumaticEndPass,
+              springStartPass,
+              springEndPass,
+              fosPneumaticEnd,
+              fosSpringEnd,
+              fos: fosSpringEnd,
+              meets: pneumaticStartPass && pneumaticEndPass && springStartPass && springEndPass
+            };
+          })
+          .filter(Boolean);
+      };
+
+      const rankCandidates = (candidates) => {
+        const preferredNum = Number(preferredSpring);
+        return candidates.sort((a, b) => {
+          const aDiff = Number.isFinite(preferredNum) ? Math.abs(Number(a.springCode) - preferredNum) : 99;
+          const bDiff = Number.isFinite(preferredNum) ? Math.abs(Number(b.springCode) - preferredNum) : 99;
+          if (aDiff !== bDiff) return aDiff - bDiff;
+          return a.springEnd - b.springEnd;
+        });
+      };
+
+      const startIndex = qtaSrBySize.findIndex(item => item.code === baseSize);
+      for (let i = startIndex; i < qtaSrBySize.length; i += 1) {
+        const sizeCode = qtaSrBySize[i].code;
+        const passing = rankCandidates(getCandidateListForSize(sizeCode).filter(item => item.meets));
+        if (!passing.length) continue;
+
+        const best = passing[0];
+        const springNote = best.springCode === preferredSpring
+          ? `${best.springCode} SPRING`
+          : `${preferredSpring || "Preferred"} SPRING requested; ${best.springCode} SPRING selected`;
+        return {
+          model: `SR-${best.sizeCode}`,
+          pneumaticStart: best.pneumaticStart,
+          pneumaticEnd: best.pneumaticEnd,
+          springStart: best.springStart,
+          springEnd: best.springEnd,
+          pneumaticStartPass: best.pneumaticStartPass,
+          pneumaticEndPass: best.pneumaticEndPass,
+          springStartPass: best.springStartPass,
+          springEndPass: best.springEndPass,
+          fosPneumaticEnd: best.fosPneumaticEnd,
+          fosSpringEnd: best.fosSpringEnd,
+          fos: best.fosSpringEnd,
+          springNote
+        };
       }
 
-      if (!srRow) return null;
-      const star5 = srRow[0] * 1.25;
-      const end5 = srRow[1] * 1.25;
-      const fosSpring = star5 / referenceTorque;
-      const fosEnd = end5 / referenceTorque;
-      const fos = Math.min(fosSpring, fosEnd);
-      const startPass = star5 > referenceTorque;
-      const endPass = end5 >= referenceTorque;
-      const springNote = usedSpring === row.srSpring
-        ? `${usedSpring} SPRING`
-        : `${row.srSpring} SPRING requested; ${usedSpring} SPRING used for torque interpolation`;
+      const fallback = rankCandidates(getCandidateListForSize(baseSize));
+      if (!fallback.length) return null;
 
-      return { star5, end5, fosSpring, fosEnd, fos, startPass, endPass, springNote };
+      const bestFallback = fallback[0];
+      const springNote = bestFallback.springCode === preferredSpring
+        ? `${bestFallback.springCode} SPRING`
+        : `${preferredSpring || "Preferred"} SPRING requested; ${bestFallback.springCode} SPRING selected`;
+
+      return {
+        model: `SR-${baseSize}`,
+        pneumaticStart: bestFallback.pneumaticStart,
+        pneumaticEnd: bestFallback.pneumaticEnd,
+        springStart: bestFallback.springStart,
+        springEnd: bestFallback.springEnd,
+        pneumaticStartPass: bestFallback.pneumaticStartPass,
+        pneumaticEndPass: bestFallback.pneumaticEndPass,
+        springStartPass: bestFallback.springStartPass,
+        springEndPass: bestFallback.springEndPass,
+        fosPneumaticEnd: bestFallback.fosPneumaticEnd,
+        fosSpringEnd: bestFallback.fosSpringEnd,
+        fos: bestFallback.fosSpringEnd,
+        springNote
+      };
     }
 
     function getBallActuatorSizing(values) {
@@ -5059,13 +5159,13 @@
         return {
           actuationLabel: "Pneumatic - Single Acting",
           productLabel: "Ball Valve",
-          model: `${row.qtaSr} / ${sa.springNote}`,
+          model: `${sa.model} / ${sa.springNote}`,
           valveSize: row.valveSize,
           valveTorque,
-          torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} Nm / Spring End ${formatNm(sa.end5)} Nm`,
-          fos: sa.fos,
-          dimensionText: `Actuator dimensions: model ${row.qtaSr} / valve size ${row.valveSize}`,
-          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} > ${formatNm(valveTorque)} (${sa.startPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.end5)} >= ${formatNm(valveTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | Resultant FOS: Pneumatic Start ${formatFos(sa.fosSpring)}, Spring End ${formatFos(sa.fosEnd)}; Governing/Minimum ${formatFos(sa.fos)}`
+          torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.pneumaticStart)} Nm / Pneumatic End ${formatNm(sa.pneumaticEnd)} Nm / Spring Start ${formatNm(sa.springStart)} Nm / Spring End ${formatNm(sa.springEnd)} Nm`,
+          fos: sa.fosSpringEnd,
+          dimensionText: `Actuator dimensions: model ${sa.model} / valve size ${row.valveSize}`,
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.pneumaticStart)} > ${formatNm(valveTorque)} (${sa.pneumaticStartPass ? "PASS" : "FAIL"}), Pneumatic End ${formatNm(sa.pneumaticEnd)} >= ${formatNm(valveTorque)} (${sa.pneumaticEndPass ? "PASS" : "FAIL"}), Spring Start ${formatNm(sa.springStart)} > ${formatNm(valveTorque)} (${sa.springStartPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.springEnd)} >= ${formatNm(valveTorque)} (${sa.springEndPass ? "PASS" : "FAIL"}) | FOS: ${formatFos(sa.fosSpringEnd)}${sa.fosSpringEnd < 1.25 ? " (WARNING: below 1.25)" : ""}`
         };
       }
 
@@ -5122,13 +5222,13 @@
         return {
           actuationLabel: "Pneumatic - Single Acting",
           productLabel: "Butterfly Valve",
-          model: `${row.qtaSr} / ${sa.springNote}`,
+          model: `${sa.model} / ${sa.springNote}`,
           valveSize: row.valveSize,
           valveTorque,
-          torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} Nm / Spring End ${formatNm(sa.end5)} Nm`,
-          fos: sa.fos,
-          dimensionText: `Actuator dimensions: model ${row.qtaSr} / valve size ${row.valveSize}`,
-          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.star5)} > ${formatNm(valveTorque)} (${sa.startPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.end5)} >= ${formatNm(valveTorque)} (${sa.endPass ? "PASS" : "FAIL"}) | Resultant FOS: Pneumatic Start ${formatFos(sa.fosSpring)}, Spring End ${formatFos(sa.fosEnd)}; Governing/Minimum ${formatFos(sa.fos)}`
+          torqueText: `Output Torque @ 5 bar: Pneumatic Start ${formatNm(sa.pneumaticStart)} Nm / Pneumatic End ${formatNm(sa.pneumaticEnd)} Nm / Spring Start ${formatNm(sa.springStart)} Nm / Spring End ${formatNm(sa.springEnd)} Nm`,
+          fos: sa.fosSpringEnd,
+          dimensionText: `Actuator dimensions: model ${sa.model} / valve size ${row.valveSize}`,
+          meta: `Sizing basis: Valve torque ${formatNm(valveTorque)} Nm | SA check @ 5 bar: Pneumatic Start ${formatNm(sa.pneumaticStart)} > ${formatNm(valveTorque)} (${sa.pneumaticStartPass ? "PASS" : "FAIL"}), Pneumatic End ${formatNm(sa.pneumaticEnd)} >= ${formatNm(valveTorque)} (${sa.pneumaticEndPass ? "PASS" : "FAIL"}), Spring Start ${formatNm(sa.springStart)} > ${formatNm(valveTorque)} (${sa.springStartPass ? "PASS" : "FAIL"}), Spring End ${formatNm(sa.springEnd)} >= ${formatNm(valveTorque)} (${sa.springEndPass ? "PASS" : "FAIL"}) | FOS: ${formatFos(sa.fosSpringEnd)}${sa.fosSpringEnd < 1.25 ? " (WARNING: below 1.25)" : ""}`
         };
       }
 
